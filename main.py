@@ -1,6 +1,7 @@
 import sys
 import json
 import shutil
+import time
 from datetime import datetime, timedelta
 import numpy as np
 import wave
@@ -21,6 +22,7 @@ class MainWindow(QMainWindow):
         self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
         # Переменные для хранения состояния перетаскивания окна
+        
         self.is_dragging = False
         self.mouse_start_position = None
         self.window_start_position = None
@@ -40,6 +42,8 @@ class MainWindow(QMainWindow):
             self.ui.wbsocket_btn: {"default": ":/MainIcons/icons/websocketW.png", "hover": ":/MainIcons/icons/websocketB.png", "checkable": True},
             self.ui.logs_btn: {"default": ":/MainIcons/icons/logsW.png", "hover": ":/MainIcons/icons/logsB.png", "checkable": True},
             self.ui.stats_btn: {"default": ":/MainIcons/icons/statsW.png", "hover": ":/MainIcons/icons/statsB.png", "checkable": True},
+            self.ui.com_help_btn: {"default": ":/MainIcons/icons/command_helpW.png", "hover": ":/MainIcons/icons/command_helpB.png", "checkable": False},
+            self.ui.send_btn: {"default": ":/MainIcons/icons/sendW.png", "hover": ":/MainIcons/icons/sendB.png", "checkable": False},
         }
 
         # Привязываем начальные иконки и события к кнопкам
@@ -58,12 +62,14 @@ class MainWindow(QMainWindow):
         self.ui.logs_btn.clicked.connect(lambda: self.switch_tab(2))
         self.ui.Settings_btn.clicked.connect(lambda: self.switch_tab(4))
         self.ui.wbsocket_btn.clicked.connect(lambda: self.switch_tab(3))
-
         self.animations = []
+        self.switch_tab(3, 500)
+        self.ui.wbsocket_btn.setChecked(True)
+        
         self.minimized_buttons_texts_dict = {}
     # Функция для переключения вкладки и анимации
     @pyqtSlot(int)
-    def switch_tab(self, index):
+    def switch_tab(self, index, duration=200):
         # Установить текущий индекс вкладки
         self.ui.CentralTabs.setCurrentIndex(index)
         
@@ -72,7 +78,7 @@ class MainWindow(QMainWindow):
 
         # Анимация fade in для каждого дочернего элемента
         for child in current_widget.findChildren(QWidget):
-            self.fade_in_animation(child, 200)
+            self.fade_in_animation(child, duration)
 
     # Функция анимации fade in
     def fade_in_animation(self, widget, duration):
@@ -122,24 +128,52 @@ class MainWindow(QMainWindow):
         return on_button_leave
     def left_menu_minimize(self):
         if not self.left_menu_minimized:  # Свернуть меню
-            self.ui.leftSide.setMinimumSize(QtCore.QSize(60, 0))
-            self.ui.left_btns.setMinimumSize(QtCore.QSize(50, 0))
+            self.animate_menu(QtCore.QSize(60, 0), QtCore.QSize(50, 0))
             for button in self.ui.left_btns.children():
                 if isinstance(button, QPushButton):
-                    button.setMaximumSize(QtCore.QSize(50, 16777215))
-                    self.minimized_buttons_texts_dict[button.objectName()] = button.text()  # Исправлено
-                    button.setText("")  # Очищаем текст кнопки
-            self.left_menu_minimized = True  # Устанавливаем состояние свернутого меню
+                    self.animate_leftMenu_button(button, QtCore.QSize(50, 16777215))
+                    self.minimized_buttons_texts_dict[button.objectName()] = button.text()
+                    
+                    button.setText("")
+            self.left_menu_minimized = True
         else:  # Развернуть меню
-            self.ui.leftSide.setMinimumSize(QtCore.QSize(300, 0))
-            self.ui.left_btns.setMinimumSize(QtCore.QSize(280, 0))
+            self.animate_menu(QtCore.QSize(300, 0), QtCore.QSize(280, 0))
             for button in self.ui.left_btns.children():
                 if isinstance(button, QPushButton):
                     button.setMaximumSize(QtCore.QSize(280, 16777215))
-                    # Восстанавливаем текст кнопки из словаря
-                    button.setText(self.minimized_buttons_texts_dict.get(button.objectName(), ""))  # Используем get для безопасности
-            self.left_menu_minimized = False  # Устанавливаем состояние развернутого меню
+                    button.setText(self.minimized_buttons_texts_dict.get(button.objectName(), ""))
+            self.left_menu_minimized = False
 
+    def animate_menu(self, side_size, btns_size):
+        # Анимация для self.ui.leftSide
+        animation1 = QPropertyAnimation(self.ui.leftSide, b"minimumSize")
+        animation1.setDuration(200)
+        animation1.setStartValue(self.ui.leftSide.minimumSize())
+        animation1.setEndValue(side_size)
+        animation1.setEasingCurve(QEasingCurve.Type.OutQuad)
+
+        # Анимация для self.ui.left_btns
+        animation2 = QPropertyAnimation(self.ui.left_btns, b"minimumSize")
+        animation2.setDuration(200)
+        animation2.setStartValue(self.ui.left_btns.minimumSize())
+        animation2.setEndValue(btns_size)
+        animation2.setEasingCurve(QEasingCurve.Type.OutQuad)
+
+        # Запуск анимации и сохранение ссылок на них
+        self.animations.append(animation1)
+        self.animations.append(animation2)
+        animation1.start()
+        animation2.start()
+    def animate_leftMenu_button(self, button, button_size):
+        # Анимация для self.ui.leftSide
+        animation1 = QPropertyAnimation(button, b"maximumSize")
+        animation1.setDuration(200)
+        animation1.setStartValue(self.ui.leftSide.maximumSize())
+        animation1.setEndValue(button_size)
+        animation1.setEasingCurve(QEasingCurve.Type.OutQuad)
+        # Запуск анимации и сохранение ссылок на них
+        self.animations.append(animation1)
+        animation1.start()
     # Слот для обновления иконки при изменении состояния checked
     def update_icon_on_toggle(self, checked):
         button = self.sender()  # Получаем кнопку, которая вызвала сигнал
