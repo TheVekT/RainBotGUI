@@ -6,13 +6,17 @@ from datetime import datetime, timedelta
 import numpy as np
 import wave
 import os
+import asyncio
+import resources
+from qasync import QEventLoop, asyncSlot
+from rainbotAPI_client import RainBot_Websocket
 from datetime import datetime
 from designe import Ui_MainWindow 
 from PyQt6 import QtGui, QtCore
 from PyQt6.QtCore import QIODevice, QBuffer, QTimer, Qt, QPropertyAnimation, QRect, QEasingCurve, QRectF, pyqtSlot
 from PyQt6.QtMultimedia import QMediaDevices, QAudioSource, QAudioFormat
 from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox,QPushButton, QWidget, QSlider, QLabel, QComboBox, QGraphicsOpacityEffect, QFileDialog
-from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath
+from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath, QCursor, QGuiApplication
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -21,20 +25,43 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setMouseTracking(True)
+        self.ui.centralwidget.setMouseTracking(True)
+        self.ui.label_6.setText("")
+        self.ui.label_7.setText("")
         # Переменные для хранения состояния перетаскивания окна
-        
+        self.wasMaximized = False
+
+        self.resize_handle = QLabel(self)
+        self.resize_handle.setGeometry(self.width() - 8, self.height() - 8, 8, 8)
+        self.resize_handle.setStyleSheet("background-color: #FFDAB9;\n"
+                                         "border-radius: 4px;\n"
+                                         )
+        self.resize_handle.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.SizeFDiagCursor))
+        self.resize_handle.setMouseTracking(True)
+        self.resize_handle.show()
+        self.websocket_client = RainBot_Websocket("ws://192.168.0.106:8765")
+        # Переменные для состояния
         self.is_dragging = False
+        self.is_resizing = False
         self.mouse_start_position = None
         self.window_start_position = None
+        self.window_start_size = None
+        self.resize_border_width = 3
         # Подключаем mouse-ивенты для метки
         self.ui.headerBar.mousePressEvent = self.label_mouse_press_event
         self.ui.headerBar.mouseMoveEvent = self.label_mouse_move_event
         self.ui.headerBar.mouseReleaseEvent = self.label_mouse_release_event
-        self.left_menu_minimized = False
 
+
+        self.left_menu_minimized = False
+        self.ui.LineSenDCommand.returnPressed.connect(self.sent_console_command)
+        self.ui.send_btn.clicked.connect(self.sent_console_command)
+        self.ui.conect_websc.clicked.connect(self.connectWS)
         self.ui.menuButton.clicked.connect(self.left_menu_minimize)
         self.ui.minimize_btn.clicked.connect(self.minimize_window)
         self.ui.close_btn.clicked.connect(self.close_window)
+        self.ui.fullscreen_btn.clicked.connect(self.toggle_fullscreen)
         self.buttons_icons = {
             self.ui.terminal_btn: {"default": ":/MainIcons/icons/terminalW.png", "hover": ":/MainIcons/icons/terminalB.png", "checkable": True},
             self.ui.menuButton: {"default": ":/MainIcons/icons/sideBarW.png", "hover": ":/MainIcons/icons/sideBarB.png", "checkable": False},
@@ -194,6 +221,8 @@ class MainWindow(QMainWindow):
     def label_mouse_move_event(self, event):
         """Перемещаем окно при перемещении мыши."""
         if self.is_dragging:
+            if self.isMaximized():
+                self.toggle_fullscreen(True)
             delta = event.globalPosition().toPoint() - self.mouse_start_position
             self.move(self.window_start_position + delta)
 
@@ -201,6 +230,44 @@ class MainWindow(QMainWindow):
         """Прекращаем перетаскивание при отпускании кнопки."""
         if event.button() == Qt.MouseButton.LeftButton:
             self.is_dragging = False
+
+
+    def resizeEvent(self, event):
+        """Переопределение события изменения размера окна для обновления позиции лейбла."""
+        super().resizeEvent(event)
+        self.resize_handle.move(self.width() - 8, self.height() - 8)
+
+    def mousePressEvent(self, event):
+        """Отслеживание начала изменения размера окна."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            # Проверяем, нажата ли мышь на нашем resize_handle
+            if self.resize_handle.geometry().contains(event.pos()):
+                self.is_resizing = True
+                self.old_pos = event.globalPosition().toPoint()  # Обновлено на globalPosition()
+
+    def mouseMoveEvent(self, event):
+        """Изменение размера окна при перемещении мыши."""
+        if self.is_resizing:
+            delta = event.globalPosition().toPoint() - self.old_pos  # Обновлено на globalPosition()
+            global_pos = event.globalPosition().toPoint()  # Глобальные координаты курсора
+            local_pos = self.mapFromGlobal(global_pos)
+            if global_pos.x() > self.old_pos.x():
+                new_width = self.width() + delta.x() if self.resize_handle.x() < local_pos.x() else self.width()
+            else:
+                new_width = self.width() + delta.x()
+            if global_pos.y() > self.old_pos.y():
+                new_height = self.height() + delta.y() if self.resize_handle.y() < local_pos.y() else self.height()
+            else:
+                new_height = self.height() + delta.y()
+            # Устанавливаем новый размер окна
+            self.resize(new_width, new_height)
+            self.old_pos = event.globalPosition().toPoint()  # Обновляем позицию
+
+    def mouseReleaseEvent(self, event):
+        """Остановка изменения размера при отпускании мыши."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.is_resizing = False
+
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -221,18 +288,145 @@ class MainWindow(QMainWindow):
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationOver)
         painter.setBrush(self.palette().window())
         painter.drawPath(path)
+        # Метод для переключения между полным экраном и обычным режимом
+    def toggle_fullscreen(self, normal=False):
+        if self.isMaximized():
+            # Вернуться в обычный режим
+            self.showNormal()
+            self.update_window_styles(border_radius=8)
+        elif normal:
+            # Вернуться в обычный режим вручную
+            self.showNormal()
+            self.update_window_styles(border_radius=8)
+        else:
+            # Перейти в полноэкранный режим
+            self.showMaximized()
+            self.update_window_styles(border_radius=0)
+
+    # Функция для обновления стилей в зависимости от состояния окна
+    def update_window_styles(self, border_radius):
+        # Устанавливаем стили окна
+        self.setStyleSheet(f"QWidget{{"
+                        f"background-color: rgb(4, 4, 4);"
+                        f"font-family: 'JetBrains Mono', Helvetica;"
+                        f"border-radius: {border_radius}px;}}")
+
+        # Устанавливаем стили заголовка
+        self.ui.headerBar.setStyleSheet(f"border-radius: 0;"
+                                        f"background-color: black;"
+                                        f"border-top-right-radius: {border_radius}px;"
+                                        f"border-top-left-radius: {border_radius}px;")
+
+        # Устанавливаем стили кнопки закрытия
+        self.ui.close_btn.setStyleSheet(f"QPushButton{{"
+                                        f"border-top-right-radius: {border_radius}px;"
+                                        f"border-top-left-radius: 0px;}}"
+                                        f"QPushButton:hover{{"
+                                        f"background-color: rgb(170, 0, 0);}}")
     def minimize_window(self):
-        self.hide()  # Скрываем текущее окно
+        if self.isMaximized():
+            self.showNormal()
+            self.wasMaximized = True
+        self.animation = QPropertyAnimation(self, b'windowOpacity')
+        self.animation.setDuration(100)
+        self.animation.setStartValue(1)
+        self.animation.setEndValue(0)
+
+        # Запускаем анимацию и скрываем окно по завершении
+        self.animation.start()
+        self.animation.finished.connect(self.showMinimized)
+    
     def close_window(self):
-        self.close()
-    def is_on_edge(self, pos):
-        """Проверяем, находимся ли на краю окна для изменения размера."""
-        margin = 10  # Задаем область чувствительности к краю
-        rect = self.rect()
-        return pos.x() >= rect.width() - margin or pos.y() >= rect.height() - margin
+        if self.isMaximized():
+            self.showNormal()
+        current_height = self.height() 
+
+        # Получаем текущие координаты окна
+        current_x = self.x()
+        current_y = self.y()
+        current_width = self.width()
+
+        # Настраиваем анимацию изменения геометрии
+        self.animation2 = QPropertyAnimation(self, b'geometry')
+        self.animation2.setDuration(100)
+        self.animation2.setStartValue(QRect(current_x, current_y, current_width, current_height))
+        self.animation2.setEndValue(QRect(current_x+30, current_y+30, current_width-60, current_height-60))
+        
+        # Запускаем анимацию и скрываем окно по завершении
+        
+        self.animation = QPropertyAnimation(self, b'windowOpacity')
+        self.animation.setDuration(100)
+        self.animation.setStartValue(1)
+        self.animation.setEndValue(0)
+        # Запускаем анимацию и скрываем окно по завершении
+        self.animation.start()
+        self.animation2.start()
+        self.animation.finished.connect(lambda: self.close())
+    def changeEvent(self, event):
+        if event.type() == QtCore.QEvent.Type.WindowStateChange:
+            if self.windowState() == Qt.WindowState.WindowNoState:
+                self.restore_window()
+
+    def restore_window(self):
+        if self.wasMaximized == True:
+            self.showMaximized()
+            self.wasMaximized = False
+        elif self.wasMaximized == False:
+        # Восстанавливаем окно и делаем его видимым
+            self.showNormal()
+
+        self.animation = QPropertyAnimation(self, b'windowOpacity')
+        self.animation.setDuration(100)
+        self.animation.setStartValue(0)
+        self.animation.setEndValue(1)
+        self.animation.start()
+    # Websocket side
+    @asyncSlot()
+    async def sent_console_command(self):
+        if self.ui.LineSenDCommand.text() != "":
+            await self.websocket_client.send_command(self.ui.LineSenDCommand.text())
+            self.ui.LineSenDCommand.clear()
+    @asyncSlot()
+    async def connectWS(self):
+        """Асинхронное подключение к WebSocket-серверу."""
+        if not self.websocket_client.isConnected():
+            self.ui.conect_websc.setText("Connecting...")
+            self.ui.conect_websc.setDisabled(True)
+            await self.websocket_client.connect()
+            await asyncio.sleep(2)
+            if self.websocket_client.isConnected():
+                self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connected.png"))
+                self.ui.label_6.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">Connected to:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.ip()}</span></p></body></html>")
+                self.ui.label_7.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">on port:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.port()}</span></p></body></html>")
+                self.ui.label_6.show()
+                self.ui.label_7.show()
+                self.ui.conect_websc.setText("Connected")
+                self.ui.conect_websc.setDisabled(False)
+            else:
+                self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connectError.png"))
+                await asyncio.sleep(3)
+                self.ui.conect_websc.setText("Connect")
+                self.ui.label_6.setText("")
+                self.ui.label_7.setText("")
+                self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/noconnected.png"))
+                self.ui.conect_websc.setChecked(False)
+                self.ui.conect_websc.setDisabled(False)
+        else:
+            self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/noconnected.png"))
+            self.ui.conect_websc.setText("Connect")
+            await self.websocket_client.disconnect()
+            self.ui.label_6.setText("")
+            self.ui.label_7.setText("")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    # Используем qasync для асинхронного событийного цикла
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)
+
     window = MainWindow()
     window.show()
-    sys.exit(app.exec())
+
+    with loop:
+        sys.exit(loop.run_forever())
