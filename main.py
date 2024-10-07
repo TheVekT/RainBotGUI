@@ -23,13 +23,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        # # 
-        # # init function/ on load 
-        # #
-        self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
-        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        self.switch_tab(3, 500)
 
 
         # #
@@ -44,7 +38,20 @@ class MainWindow(QMainWindow):
         self.window_start_position = None
         self.window_start_size = None
         self.minimized_buttons_texts_dict = {}
+        self.logs_was_loaded = False
 
+
+        # # 
+        # # init function/ on load 
+        # #
+
+        self.ui.textBrowser.setFontPointSize(12)
+        self.ui.textBrowser.setFontFamily("JetBrains Mono,Helvetica")
+        self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setDisabled_tabs(True)
+        self.switch_tab(3, 500)
+        self.buttons_hover_init()
 
         # # 
         # # widgets init
@@ -98,9 +105,10 @@ class MainWindow(QMainWindow):
         # #
         # # websocket
         # # 
-        self.websocket_client = RainBot_Websocket("ws://192.168.0.106:8765")
-
-
+        self.websocket_client = RainBot_Websocket("ws://192.168.0.108:8765")
+                # Подключаем сигнал нового лога к слоту обновления UI
+        self.websocket_client.new_log_signal.connect(self.handle_new_log_message)
+        self.websocket_client.connection_closed.connect(self.WS_on_diconnect)
 ###########                        ###########
 ###########    End of __init__     ###########       
 ###########                        ###########  
@@ -348,6 +356,26 @@ class MainWindow(QMainWindow):
         self.animation.setEndValue(1)
         self.animation.start()
 
+    def setDisabled_tabs(self, disable: bool):
+        for i in range(self.ui.CentralTabs.count()):
+            tab_widget = self.ui.CentralTabs.widget(i)
+            
+            # Проверяем, не является ли вкладка исключением по имени
+            if tab_widget.objectName() != "websocket_tab":
+                # Создаем эффект прозрачности
+                opacity_effect = QGraphicsOpacityEffect()
+
+                # Если передано значение True, уменьшаем прозрачность до 20%
+                if disable:
+                    opacity_effect.setOpacity(0.2)  # 20% прозрачности
+                    tab_widget.setGraphicsEffect(opacity_effect)
+                else:
+                    # Удаляем эффект, сбрасывая его
+                    tab_widget.setGraphicsEffect(None)  # Удаляем эффект прозрачности
+
+                # Отключаем или включаем виджеты внутри вкладки
+                for child in tab_widget.findChildren(QWidget):
+                    child.setDisabled(disable)
 
 
 
@@ -452,6 +480,12 @@ class MainWindow(QMainWindow):
         ##
         ## Websocket
         ##
+    @asyncSlot()
+    async def load_logs(self):
+        logs = await self.websocket_client.get_logs()
+        for log_str in logs:
+            # Используем insertHtml, чтобы добавить логи с HTML-разметкой
+            self.ui.textBrowser.append(log_str)
 
 
 
@@ -459,8 +493,18 @@ class MainWindow(QMainWindow):
     async def sent_console_command(self):
         if self.ui.LineSenDCommand.text() != "":
             await self.websocket_client.send_command(self.ui.LineSenDCommand.text())
+            self.ui.textBrowser.append(self.ui.LineSenDCommand.text())
             self.ui.LineSenDCommand.clear()
 
+    @asyncSlot()
+    async def WS_on_diconnect(self):
+        self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/noconnected.png"))
+        self.ui.conect_websc.setText("Connect")
+        await self.websocket_client.disconnect()
+        self.ui.label_6.setText("")
+        self.ui.label_7.setText("")
+        self.setDisabled_tabs(True)
+        self.ui.conect_websc.setChecked(False)
 
     @asyncSlot()
     async def connectWS(self):
@@ -478,6 +522,10 @@ class MainWindow(QMainWindow):
                 self.ui.label_7.show()
                 self.ui.conect_websc.setText("Connected")
                 self.ui.conect_websc.setDisabled(False)
+                self.setDisabled_tabs(False)
+                if self.logs_was_loaded == False:
+                    await self.load_logs()
+                    self.logs_was_loaded = True 
             else:
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connectError.png"))
                 await asyncio.sleep(3)
@@ -487,13 +535,18 @@ class MainWindow(QMainWindow):
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/noconnected.png"))
                 self.ui.conect_websc.setChecked(False)
                 self.ui.conect_websc.setDisabled(False)
+                self.setDisabled_tabs(True)
         else:
             self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/noconnected.png"))
             self.ui.conect_websc.setText("Connect")
             await self.websocket_client.disconnect()
             self.ui.label_6.setText("")
             self.ui.label_7.setText("")
-
+            self.setDisabled_tabs(True)
+    def handle_new_log_message(self, log_message):
+        """Метод для обработки нового сообщения."""
+        self.ui.textBrowser.append(log_message)
+        # Здесь вы можете обновить элементы интерфейса с полученным сообщением
             
 
 if __name__ == "__main__":
