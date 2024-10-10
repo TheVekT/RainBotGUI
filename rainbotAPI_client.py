@@ -67,9 +67,9 @@ class RainBot_Websocket(QObject):
                 try:
                     data = json.loads(message)
                     if 'type' in data and data['type'] == 'logs':
-                        await self.logs_queue.put(data['logs'])  # Кладем логи в очередь
+                        await self.logs_queue.put(data['message'])  # Кладем логи в очередь
                     elif 'type' in data and data['type'] == 'new_log_message':
-                        self.new_log_signal.emit(data['logs'])
+                        self.new_log_signal.emit(data['message'])
                     else:
                         print(f"Получено другое сообщение: {data}")
                 except json.JSONDecodeError:

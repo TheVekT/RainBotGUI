@@ -15,7 +15,7 @@ from designe import Ui_MainWindow
 from PyQt6 import QtGui, QtCore
 from PyQt6.QtCore import QIODevice, QBuffer, QTimer, Qt, QPropertyAnimation, QRect, QEasingCurve, QRectF, pyqtSlot
 from PyQt6.QtMultimedia import QMediaDevices, QAudioSource, QAudioFormat
-from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox,QPushButton, QWidget, QSlider, QLabel, QComboBox, QGraphicsOpacityEffect, QFileDialog
+from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox,QPushButton, QWidget, QSlider, QLabel, QTextEdit, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QFileDialog
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath, QCursor, QGuiApplication
 
 class MainWindow(QMainWindow):
@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
         # # init function/ on load 
         # #
 
-        self.ui.textBrowser.setFontPointSize(12)
+        self.ui.textBrowser.setFontPointSize(11)
         self.ui.textBrowser.setFontFamily("JetBrains Mono,Helvetica")
         self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -73,6 +73,9 @@ class MainWindow(QMainWindow):
         self.ui.label_7.setText("")
 
         self.ui.wbsocket_btn.setChecked(True)
+
+        self.ui.build_info.setText("Build: 1.2.2")
+        self.ui.websck_status.hide()
 
 
         # #
@@ -105,7 +108,7 @@ class MainWindow(QMainWindow):
         # #
         # # websocket
         # # 
-        self.websocket_client = RainBot_Websocket("ws://192.168.0.108:8765")
+        self.websocket_client = RainBot_Websocket("ws://192.168.0.106:8765")
                 # Подключаем сигнал нового лога к слоту обновления UI
         self.websocket_client.new_log_signal.connect(self.handle_new_log_message)
         self.websocket_client.connection_closed.connect(self.WS_on_diconnect)
@@ -378,6 +381,40 @@ class MainWindow(QMainWindow):
                     child.setDisabled(disable)
 
 
+    def set_neon_glow(self, frame, color="#00FF00", enable=True):
+        """
+        Создает анимированное неоновое свечение для существующего элемента QFrame.
+
+        :param frame: QFrame элемент, на котором будет применен эффект.
+        :param color: Цвет свечения в формате HEX (по умолчанию зеленый).
+        :param enable: Включение или отключение эффекта.
+        """
+        if enable:
+            # Создаем эффект тени для имитации свечения
+            shadow_effect = QGraphicsDropShadowEffect()
+            shadow_effect.setBlurRadius(0)  # Начальный радиус свечения
+            shadow_effect.setColor(QColor(color))
+            shadow_effect.setOffset(0, 0)  # Центрируем свечение
+
+
+            
+            # Применяем эффект к переданному элементу
+            frame.setGraphicsEffect(shadow_effect)
+
+            # Анимация для увеличения радиуса свечения
+            self.animation = QPropertyAnimation(shadow_effect, b"blurRadius")
+            self.animation.setDuration(1000)  # Длительность анимации
+            self.animation.setStartValue(0)  # Начальное значение (без свечения)
+            self.animation.setEndValue(100)  # Максимальное свечение
+            self.animation.setEasingCurve(QEasingCurve.Type.OutQuad)  # Кривая для плавного эффекта
+            self.animation.start()
+        else:
+            # Убираем эффект свечения
+            frame.setGraphicsEffect(None)
+
+
+
+
 
         ##
         ## EVENTS
@@ -438,6 +475,7 @@ class MainWindow(QMainWindow):
             else:
                 new_height = self.height() + delta.y()
             # Устанавливаем новый размер окна
+            self.ui.textBrowser.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
             self.resize(new_width, new_height)
             self.old_pos = event.globalPosition().toPoint()  # Обновляем позицию
 
@@ -446,6 +484,7 @@ class MainWindow(QMainWindow):
         """Остановка изменения размера при отпускании мыши."""
         if event.button() == Qt.MouseButton.LeftButton:
             self.is_resizing = False
+            self.ui.textBrowser.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
 
     def paintEvent(self, event):
@@ -489,9 +528,15 @@ class MainWindow(QMainWindow):
 
 
 
+
     @asyncSlot()
     async def sent_console_command(self):
         if self.ui.LineSenDCommand.text() != "":
+            if self.ui.LineSenDCommand.text() == "/disconnect":
+                await self.websocket_client.disconnect()
+                self.ui.textBrowser.append(self.ui.LineSenDCommand.text())
+                self.ui.LineSenDCommand.clear()
+                return
             await self.websocket_client.send_command(self.ui.LineSenDCommand.text())
             self.ui.textBrowser.append(self.ui.LineSenDCommand.text())
             self.ui.LineSenDCommand.clear()
@@ -505,6 +550,7 @@ class MainWindow(QMainWindow):
         self.ui.label_7.setText("")
         self.setDisabled_tabs(True)
         self.ui.conect_websc.setChecked(False)
+        self.ui.websck_status.hide()
 
     @asyncSlot()
     async def connectWS(self):
@@ -513,6 +559,8 @@ class MainWindow(QMainWindow):
             self.ui.conect_websc.setText("Connecting...")
             self.ui.conect_websc.setDisabled(True)
             await self.websocket_client.connect()
+            self.ui.textBrowser.clear()
+            await self.load_logs()
             await asyncio.sleep(2)
             if self.websocket_client.isConnected():
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connected.png"))
@@ -523,9 +571,7 @@ class MainWindow(QMainWindow):
                 self.ui.conect_websc.setText("Connected")
                 self.ui.conect_websc.setDisabled(False)
                 self.setDisabled_tabs(False)
-                if self.logs_was_loaded == False:
-                    await self.load_logs()
-                    self.logs_was_loaded = True 
+                self.ui.websck_status.show()
             else:
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connectError.png"))
                 await asyncio.sleep(3)
