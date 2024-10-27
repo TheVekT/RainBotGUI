@@ -24,7 +24,6 @@ class Ui_MainWindow(object):
 "    font-family: \"JetBrains Mono\", Helvetica;\n"
 "    border-radius: 8px;\n"
 "}")
-
         MainWindow.setUnifiedTitleAndToolBarOnMac(False)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setMinimumSize(QtCore.QSize(1000, 500))
@@ -355,6 +354,34 @@ class Ui_MainWindow(object):
         self.Settings_btn.setObjectName("Settings_btn")
         self.leftButtons.addButton(self.Settings_btn)
         self.verticalLayout_2.addWidget(self.Settings_btn)
+        self.server_btn = QtWidgets.QPushButton(parent=self.left_btns)
+        self.server_btn.setMinimumSize(QtCore.QSize(50, 50))
+        self.server_btn.setMaximumSize(QtCore.QSize(280, 16777215))
+        self.server_btn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.server_btn.setStyleSheet("QPushButton{\n"
+"    border: 3px solid lime;\n"
+"    border-radius: 10px;\n"
+"    background-color: rgb(10, 10, 10);\n"
+"    color: white;\n"
+"    font-size: 16px;\n"
+"    border: none;\n"
+"}\n"
+"QPushButton:hover{\n"
+"    color: black;\n"
+"    background-color: #FFDAB9;\n"
+"}\n"
+"QPushButton:checked{\n"
+"    color: black;\n"
+"    background-color: #FFDAB9;\n"
+"}")
+        icon9 = QtGui.QIcon()
+        icon9.addPixmap(QtGui.QPixmap(":/MainIcons/icons/serverW.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        self.server_btn.setIcon(icon9)
+        self.server_btn.setIconSize(QtCore.QSize(30, 30))
+        self.server_btn.setCheckable(True)
+        self.server_btn.setObjectName("server_btn")
+        self.leftButtons.addButton(self.server_btn)
+        self.verticalLayout_2.addWidget(self.server_btn)
         self.verticalLayout.addWidget(self.left_btns, 0, QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignVCenter)
         self.menu_btn = QtWidgets.QFrame(parent=self.leftSide)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
@@ -394,9 +421,9 @@ class Ui_MainWindow(object):
 "    background-color: #FFDAB9;\n"
 "}")
         self.menuButton.setText("")
-        icon9 = QtGui.QIcon()
-        icon9.addPixmap(QtGui.QPixmap(":/MainIcons/icons/sideBarW.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
-        self.menuButton.setIcon(icon9)
+        icon10 = QtGui.QIcon()
+        icon10.addPixmap(QtGui.QPixmap(":/MainIcons/icons/sideBarW.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        self.menuButton.setIcon(icon10)
         self.menuButton.setIconSize(QtCore.QSize(32, 32))
         self.menuButton.setObjectName("menuButton")
         self.horizontalLayout.addWidget(self.menuButton, 0, QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignBottom)
@@ -503,8 +530,9 @@ class Ui_MainWindow(object):
 "QTextBrowser QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {\n"
 "    background: none;           /* Цвет фона за ползунком */\n"
 "}")
-        self.textBrowser.setObjectName("textBrowser")
         self.textBrowser.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.textBrowser.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.WidgetWidth)
+        self.textBrowser.setObjectName("textBrowser")
         self.console_layout.addWidget(self.textBrowser)
         self.executeLine = QtWidgets.QFrame(parent=self.console_layout_2)
         self.executeLine.setMinimumSize(QtCore.QSize(0, 25))
@@ -536,9 +564,9 @@ class Ui_MainWindow(object):
 "    background-color: #FFDAB9;\n"
 "}")
         self.com_help_btn.setText("")
-        icon10 = QtGui.QIcon()
-        icon10.addPixmap(QtGui.QPixmap(":/MainIcons/icons/command_helpW.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
-        self.com_help_btn.setIcon(icon10)
+        icon11 = QtGui.QIcon()
+        icon11.addPixmap(QtGui.QPixmap(":/MainIcons/icons/command_helpW.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        self.com_help_btn.setIcon(icon11)
         self.com_help_btn.setIconSize(QtCore.QSize(18, 18))
         self.com_help_btn.setObjectName("com_help_btn")
         self.horizontalLayout_7.addWidget(self.com_help_btn)
@@ -552,7 +580,7 @@ class Ui_MainWindow(object):
         self.LineSenDCommand.setMaximumSize(QtCore.QSize(16777215, 25))
         font = QtGui.QFont()
         font.setFamily("JetBrains Mono,Helvetica")
-        font.setPointSize(12)
+        font.setPointSize(-1)
         self.LineSenDCommand.setFont(font)
         self.LineSenDCommand.setStyleSheet("\n"
 "QLineEdit {\n"
@@ -594,9 +622,9 @@ class Ui_MainWindow(object):
 "    background-color: #FFDAB9;\n"
 "}")
         self.send_btn.setText("")
-        icon11 = QtGui.QIcon()
-        icon11.addPixmap(QtGui.QPixmap(":/MainIcons/icons/sendW.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
-        self.send_btn.setIcon(icon11)
+        icon12 = QtGui.QIcon()
+        icon12.addPixmap(QtGui.QPixmap(":/MainIcons/icons/sendW.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        self.send_btn.setIcon(icon12)
         self.send_btn.setIconSize(QtCore.QSize(20, 20))
         self.send_btn.setObjectName("send_btn")
         self.horizontalLayout_7.addWidget(self.send_btn)
@@ -609,9 +637,14 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.setContentsMargins(0, 1, 1, 1)
         self.verticalLayout_8.setSpacing(5)
         self.verticalLayout_8.setObjectName("verticalLayout_8")
-        self.buttons_in_terminal = QtWidgets.QWidget(parent=self.lay8)
+        self.buttons_in_terminal = QtWidgets.QFrame(parent=self.lay8)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.buttons_in_terminal.sizePolicy().hasHeightForWidth())
+        self.buttons_in_terminal.setSizePolicy(sizePolicy)
         self.buttons_in_terminal.setMinimumSize(QtCore.QSize(180, 153))
-        self.buttons_in_terminal.setMaximumSize(QtCore.QSize(180, 153))
+        self.buttons_in_terminal.setMaximumSize(QtCore.QSize(180, 16777215))
         self.buttons_in_terminal.setObjectName("buttons_in_terminal")
         self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.buttons_in_terminal)
         self.verticalLayout_6.setContentsMargins(0, 0, 0, 0)
@@ -706,10 +739,81 @@ class Ui_MainWindow(object):
 "    background-color: #FFDAB9;\n"
 "}\n"
 "")
-        self.button_find_in_console.setCheckable(False)
+        self.button_find_in_console.setCheckable(True)
         self.button_find_in_console.setChecked(False)
         self.button_find_in_console.setObjectName("button_find_in_console")
         self.verticalLayout_6.addWidget(self.button_find_in_console)
+        self.find_label_2 = QtWidgets.QFrame(parent=self.buttons_in_terminal)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.find_label_2.sizePolicy().hasHeightForWidth())
+        self.find_label_2.setSizePolicy(sizePolicy)
+        self.find_label_2.setMinimumSize(QtCore.QSize(180, 0))
+        self.find_label_2.setMaximumSize(QtCore.QSize(180, 50))
+        self.find_label_2.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(10, 10, 10, 255), stop:0.5 rgba(6, 6, 6, 255));\n"
+"")
+        self.find_label_2.setObjectName("find_label_2")
+        self.find_label = QtWidgets.QHBoxLayout(self.find_label_2)
+        self.find_label.setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetMinAndMaxSize)
+        self.find_label.setContentsMargins(0, 0, 0, 0)
+        self.find_label.setSpacing(3)
+        self.find_label.setObjectName("find_label")
+        self.Find_line = QtWidgets.QLineEdit(parent=self.find_label_2)
+        self.Find_line.setMinimumSize(QtCore.QSize(0, 50))
+        self.Find_line.setMaximumSize(QtCore.QSize(16777215, 50))
+        self.Find_line.setStyleSheet("selection-background-color:  #FFDAB9;\n"
+"selection-color: black;\n"
+"background-color: rgba(0,0,0,0);\n"
+"color: white;\n"
+"font-size: 12px;\n"
+"border-radius: 4px;\n"
+"padding-left: 5px;")
+        self.Find_line.setObjectName("Find_line")
+        self.find_label.addWidget(self.Find_line)
+        self.find_updown_btns_2 = QtWidgets.QFrame(parent=self.find_label_2)
+        self.find_updown_btns_2.setMaximumSize(QtCore.QSize(16777215, 50))
+        self.find_updown_btns_2.setObjectName("find_updown_btns_2")
+        self.find_updown_btns = QtWidgets.QVBoxLayout(self.find_updown_btns_2)
+        self.find_updown_btns.setContentsMargins(1, 1, 1, 1)
+        self.find_updown_btns.setSpacing(1)
+        self.find_updown_btns.setObjectName("find_updown_btns")
+        self.upBotton = QtWidgets.QPushButton(parent=self.find_updown_btns_2)
+        self.upBotton.setMinimumSize(QtCore.QSize(16, 16))
+        self.upBotton.setMaximumSize(QtCore.QSize(16, 16))
+        self.upBotton.setStyleSheet("QPushButton{\n"
+"    border-radius: 3px;\n"
+"    background-color: rgb(10, 10, 10);\n"
+"    color: white;\n"
+"    font-size: 13px;\n"
+"    border: none;\n"
+"}\n"
+"QPushButton:hover{\n"
+"    color: black;\n"
+"    background-color: #FFDAB9;\n"
+"}\n"
+"")
+        self.upBotton.setObjectName("upBotton")
+        self.find_updown_btns.addWidget(self.upBotton)
+        self.downBotton = QtWidgets.QPushButton(parent=self.find_updown_btns_2)
+        self.downBotton.setMinimumSize(QtCore.QSize(16, 16))
+        self.downBotton.setMaximumSize(QtCore.QSize(16, 16))
+        self.downBotton.setStyleSheet("QPushButton{\n"
+"    border-radius: 3px;\n"
+"    background-color: rgb(10, 10, 10);\n"
+"    color: white;\n"
+"    font-size: 13px;\n"
+"    border: none;\n"
+"}\n"
+"QPushButton:hover{\n"
+"    color: black;\n"
+"    background-color: #FFDAB9;\n"
+"}\n"
+"")
+        self.downBotton.setObjectName("downBotton")
+        self.find_updown_btns.addWidget(self.downBotton)
+        self.find_label.addWidget(self.find_updown_btns_2)
+        self.verticalLayout_6.addWidget(self.find_label_2)
         self.label = QtWidgets.QLabel(parent=self.buttons_in_terminal)
         self.label.setMinimumSize(QtCore.QSize(0, 30))
         self.label.setMaximumSize(QtCore.QSize(16777215, 20))
@@ -806,10 +910,6 @@ class Ui_MainWindow(object):
         self.CentralTabs.addTab(self.stats_tab, "")
         self.logs_tab = QtWidgets.QWidget()
         self.logs_tab.setObjectName("logs_tab")
-        self.label_3 = QtWidgets.QLabel(parent=self.logs_tab)
-        self.label_3.setGeometry(QtCore.QRect(40, 30, 51, 41))
-        self.label_3.setStyleSheet("color: white;")
-        self.label_3.setObjectName("label_3")
         self.CentralTabs.addTab(self.logs_tab, "")
         self.websocket_tab = QtWidgets.QWidget()
         self.websocket_tab.setObjectName("websocket_tab")
@@ -909,25 +1009,38 @@ class Ui_MainWindow(object):
         self.label_4.setStyleSheet("color: white;")
         self.label_4.setObjectName("label_4")
         self.CentralTabs.addTab(self.settings_tab, "")
+        self.mine_servers = QtWidgets.QWidget()
+        self.mine_servers.setObjectName("mine_servers")
+        self.verticalLayout_13 = QtWidgets.QVBoxLayout(self.mine_servers)
+        self.verticalLayout_13.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_13.setSpacing(0)
+        self.verticalLayout_13.setObjectName("verticalLayout_13")
+        self.frame_7 = QtWidgets.QFrame(parent=self.mine_servers)
+        self.frame_7.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_7.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_7.setObjectName("frame_7")
+        self.verticalLayout_13.addWidget(self.frame_7)
+        self.CentralTabs.addTab(self.mine_servers, "")
         self.horizontalLayout_3.addWidget(self.CentralTabs)
         self.horizontalLayout_2.addWidget(self.MainFrame)
         self.verticalLayout_3.addWidget(self.bottonFrame)
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.CentralTabs.setCurrentIndex(3)
+        self.CentralTabs.setCurrentIndex(5)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "RainBot GUI"))
         self.build_info.setText(_translate("MainWindow", "Build: "))
-        self.websck_status.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Websocket: </span><span style=\" font-size:10pt; font-weight:600;\">connected</span></p></body></html>"))
+        self.websck_status.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt;\">Websocket: </span><span style=\" font-size:9pt; font-weight:600;\">c</span></p></body></html>"))
         self.terminal_btn.setText(_translate("MainWindow", "Terminal"))
         self.stats_btn.setText(_translate("MainWindow", "Stats"))
         self.logs_btn.setText(_translate("MainWindow", "logs"))
         self.wbsocket_btn.setText(_translate("MainWindow", "WebSocket"))
         self.Settings_btn.setText(_translate("MainWindow", "Settings"))
+        self.server_btn.setText(_translate("MainWindow", "Minecraft servers"))
         self.textBrowser.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
@@ -936,12 +1049,14 @@ class Ui_MainWindow(object):
         self.button_edit_FSC.setText(_translate("MainWindow", "Edit fast commands"))
         self.button_edit_binds.setText(_translate("MainWindow", "Edit binds"))
         self.button_find_in_console.setText(_translate("MainWindow", "Find..."))
+        self.Find_line.setPlaceholderText(_translate("MainWindow", "Find text"))
+        self.upBotton.setText(_translate("MainWindow", "▲"))
+        self.downBotton.setText(_translate("MainWindow", "▼"))
         self.label.setText(_translate("MainWindow", "Fast Commands:"))
         self.button_term_shlepki.setText(_translate("MainWindow", "Shlepki"))
         self.CentralTabs.setTabText(self.CentralTabs.indexOf(self.terminal_tab), _translate("MainWindow", "Tab 1"))
         self.label_2.setText(_translate("MainWindow", "Stats"))
         self.CentralTabs.setTabText(self.CentralTabs.indexOf(self.stats_tab), _translate("MainWindow", "Page"))
-        self.label_3.setText(_translate("MainWindow", "logs"))
         self.CentralTabs.setTabText(self.CentralTabs.indexOf(self.logs_tab), _translate("MainWindow", "Page"))
         self.conect_websc.setText(_translate("MainWindow", "Connect"))
         self.label_6.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#89b086;\">Connected to:  </span><span style=\" font-weight:600; color:#69c5ca;\">192.168.0.106</span></p></body></html>"))
@@ -949,3 +1064,4 @@ class Ui_MainWindow(object):
         self.CentralTabs.setTabText(self.CentralTabs.indexOf(self.websocket_tab), _translate("MainWindow", "Page"))
         self.label_4.setText(_translate("MainWindow", "settings"))
         self.CentralTabs.setTabText(self.CentralTabs.indexOf(self.settings_tab), _translate("MainWindow", "Tab 2"))
+        self.CentralTabs.setTabText(self.CentralTabs.indexOf(self.mine_servers), _translate("MainWindow", "Page"))

@@ -4,26 +4,30 @@ import shutil
 import time
 from datetime import datetime, timedelta
 import numpy as np
-import wave
 import os
 import asyncio
 import resources
+import websockets
 from qasync import QEventLoop, asyncSlot
 from rainbotAPI_client import RainBot_Websocket
-from datetime import datetime
 from designe import Ui_MainWindow 
-from PyQt6 import QtGui, QtCore
-from PyQt6.QtCore import QIODevice, QBuffer, QTimer, Qt, QPropertyAnimation, QRect, QEasingCurve, QRectF, pyqtSlot
+from PyQt6 import QtGui, QtCore, QtWidgets
+from PyQt6.QtCore import QIODevice, QBuffer, QTimer, Qt, QPropertyAnimation, QRect, QEasingCurve, QRectF, pyqtSlot, pyqtSignal
 from PyQt6.QtMultimedia import QMediaDevices, QAudioSource, QAudioFormat
-from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox,QPushButton, QWidget, QSlider, QLabel, QTextEdit, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QFileDialog
-from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath, QCursor, QGuiApplication
+from PyQt6.QtWidgets import QMainWindow, QApplication, QDockWidget ,QPushButton, QWidget,QVBoxLayout, QHBoxLayout,QMessageBox, QSlider, QLabel, QTextEdit, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QFileDialog
+from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath, QCursor, QGuiApplication,  QTextDocument, QTextCursor
+from ctypes import windll, wintypes
+import ctypes
+from win import *
+
+
 
 class MainWindow(QMainWindow):
+    searchRequested = pyqtSignal(str, bool)
     def __init__(self):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
 
 
         # #
@@ -34,12 +38,13 @@ class MainWindow(QMainWindow):
         self.wasMaximized = False
         self.is_dragging = False
         self.is_resizing = False
+        self.is_maximized = False
         self.mouse_start_position = None
         self.window_start_position = None
         self.window_start_size = None
         self.minimized_buttons_texts_dict = {}
         self.logs_was_loaded = False
-
+        self.find_label_hidden = False
 
         # # 
         # # init function/ on load 
@@ -47,24 +52,19 @@ class MainWindow(QMainWindow):
 
         self.ui.textBrowser.setFontPointSize(11)
         self.ui.textBrowser.setFontFamily("JetBrains Mono,Helvetica")
-        self.setWindowFlags(QtCore.Qt.WindowType.FramelessWindowHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setDisabled_tabs(True)
+        
         self.switch_tab(3, 500)
         self.buttons_hover_init()
+        self.toggle_find()
+        self.window_resizing_frame()
+
 
         # # 
         # # widgets init
         # #
-                    # resize handler init
-        self.resize_handle = QLabel(self)
-        self.resize_handle.setGeometry(self.width() - 8, self.height() - 8, 8, 8)
-        self.resize_handle.setStyleSheet("background-color: #FFDAB9;\n"
-                                         "border-radius: 4px;\n"
-                                         )
-        self.resize_handle.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.SizeFDiagCursor))
-        self.resize_handle.setMouseTracking(True)
-        self.resize_handle.show()
+        
 
         self.setMouseTracking(True)
         self.ui.centralwidget.setMouseTracking(True)
@@ -74,17 +74,20 @@ class MainWindow(QMainWindow):
 
         self.ui.wbsocket_btn.setChecked(True)
 
-        self.ui.build_info.setText("Build: 1.2.2")
+        self.ui.build_info.setText("Build: 1.3.0")
         self.ui.websck_status.hide()
 
+
+        
+
+        self.setDisabled_tabs(True)
 
         # #
         # # connectors
         # #
 
         self.ui.headerBar.mousePressEvent = self.label_mouse_press_event
-        self.ui.headerBar.mouseMoveEvent = self.label_mouse_move_event
-        self.ui.headerBar.mouseReleaseEvent = self.label_mouse_release_event
+
 
         self.ui.LineSenDCommand.returnPressed.connect(self.sent_console_command)
         self.ui.send_btn.clicked.connect(self.sent_console_command)
@@ -94,7 +97,7 @@ class MainWindow(QMainWindow):
         self.ui.menuButton.clicked.connect(self.left_menu_minimize)
 
         self.ui.minimize_btn.clicked.connect(self.minimize_window)
-        self.ui.close_btn.clicked.connect(self.close_window)
+        self.ui.close_btn.clicked.connect(self.close_window_like_windows)
         self.ui.fullscreen_btn.clicked.connect(self.toggle_fullscreen)
 
         
@@ -103,21 +106,31 @@ class MainWindow(QMainWindow):
         self.ui.logs_btn.clicked.connect(lambda: self.switch_tab(2))
         self.ui.Settings_btn.clicked.connect(lambda: self.switch_tab(4))
         self.ui.wbsocket_btn.clicked.connect(lambda: self.switch_tab(3))
+        self.ui.server_btn.clicked.connect(lambda: self.switch_tab(5))
+
+        self.ui.button_find_in_console.clicked.connect(self.toggle_find)
+        self.ui.upBotton.clicked.connect(self.onUpClicked)
+        self.ui.downBotton.clicked.connect(self.onDownClicked)
+        self.searchRequested.connect(self.onSearchRequested)
+
 
 
         # #
         # # websocket
         # # 
-        self.websocket_client = RainBot_Websocket("ws://192.168.0.106:8765")
+        self.websocket_client = RainBot_Websocket()
                 # Подключаем сигнал нового лога к слоту обновления UI
         self.websocket_client.new_log_signal.connect(self.handle_new_log_message)
         self.websocket_client.connection_closed.connect(self.WS_on_diconnect)
+
+
+
+
 ###########                        ###########
 ###########    End of __init__     ###########       
 ###########                        ###########  
 ###########    Metods              ###########       
 ###########                        ###########
-
 
 
         ##
@@ -135,6 +148,7 @@ class MainWindow(QMainWindow):
             self.ui.stats_btn: {"default": ":/MainIcons/icons/statsW.png", "hover": ":/MainIcons/icons/statsB.png", "checkable": True},
             self.ui.com_help_btn: {"default": ":/MainIcons/icons/command_helpW.png", "hover": ":/MainIcons/icons/command_helpB.png", "checkable": False},
             self.ui.send_btn: {"default": ":/MainIcons/icons/sendW.png", "hover": ":/MainIcons/icons/sendB.png", "checkable": False},
+            self.ui.server_btn: {"default": ":/MainIcons/icons/serverW.png", "hover": ":/MainIcons/icons/serverB.png", "checkable": True},
         }
 
         # Привязываем начальные иконки и события к кнопкам
@@ -160,7 +174,8 @@ class MainWindow(QMainWindow):
 
         # Анимация fade in для каждого дочернего элемента
         for child in current_widget.findChildren(QWidget):
-            self.fade_in_animation(child, duration)
+            if child.objectName() != 'find_label_2':
+                self.fade_in_animation(child, duration)
 
 
     # Функция анимации fade in
@@ -214,7 +229,7 @@ class MainWindow(QMainWindow):
             self.animate_menu(QtCore.QSize(60, 0), QtCore.QSize(50, 0))
             for button in self.ui.left_btns.children():
                 if isinstance(button, QPushButton):
-                    self.animate_leftMenu_button(button, QtCore.QSize(50, 16777215))
+                    self.animate_button(button, QtCore.QSize(50, 16777215))
                     self.minimized_buttons_texts_dict[button.objectName()] = button.text()
                     
                     button.setText("")
@@ -247,7 +262,7 @@ class MainWindow(QMainWindow):
         self.animations.append(animation2)
         animation1.start()
         animation2.start()
-    def animate_leftMenu_button(self, button, button_size):
+    def animate_button(self, button, button_size):
         # Анимация для self.ui.leftSide
         animation1 = QPropertyAnimation(button, b"maximumSize")
         animation1.setDuration(200)
@@ -269,19 +284,89 @@ class MainWindow(QMainWindow):
 
 
 
-    def toggle_fullscreen(self, normal=False):
-        if self.isMaximized():
-            # Вернуться в обычный режим
-            self.showNormal()
-            self.update_window_styles(border_radius=8)
-        elif normal:
-            # Вернуться в обычный режим вручную
-            self.showNormal()
-            self.update_window_styles(border_radius=8)
+    def toggle_fullscreen(self):
+        hwnd = int(self.winId())
+        GWL_STYLE = -16
+        GWL_EXSTYLE = -20
+        style = GetWindowLongPtr(hwnd, GWL_STYLE)
+
+        if not self.is_maximized:
+            self.update_window_styles(0)
+            # Save the current window position and size
+            rect = RECT()
+            ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
+            self.saved_rect = (rect.left, rect.top, rect.right, rect.bottom)
+            self.saved_style = style
+
+            # Modify window style to remove borders and title bar
+            style &= ~(0x00C00000 | 0x00040000)  # Remove WS_CAPTION and WS_THICKFRAME
+            style |= 0x80000000  # Add WS_POPUP
+            SetWindowLongPtr(hwnd, GWL_STYLE, style)
+
+            # Get monitor info
+            hMonitor = ctypes.windll.user32.MonitorFromWindow(hwnd, 0x00000002)  # MONITOR_DEFAULTTONEAREST
+            mi = MONITORINFO()
+            mi.cbSize = ctypes.sizeof(MONITORINFO)
+            ctypes.windll.user32.GetMonitorInfoW(hMonitor, ctypes.byref(mi))
+
+            # Set window to fullscreen
+            ctypes.windll.user32.SetWindowPos(
+                hwnd, None,
+                mi.rcMonitor.left, mi.rcMonitor.top,
+                mi.rcMonitor.right - mi.rcMonitor.left,
+                mi.rcMonitor.bottom - mi.rcMonitor.top,
+                0x0040)  # SWP_NOZORDER
+
+            # Inform the GUI framework about the change
+            self.setGeometry(
+                mi.rcMonitor.left, mi.rcMonitor.top,
+                mi.rcMonitor.right - mi.rcMonitor.left,
+                mi.rcMonitor.bottom - mi.rcMonitor.top
+            )
+            self.is_maximized = True
         else:
-            # Перейти в полноэкранный режим
-            self.showMaximized()
-            self.update_window_styles(border_radius=0)
+            self.update_window_styles(8)
+            # Restore original window style
+            style = self.saved_style
+            SetWindowLongPtr(hwnd, GWL_STYLE, style)
+
+            # Restore window size and position
+            x, y, right, bottom = self.saved_rect
+            width = right - x
+            height = bottom - y
+
+            # Adjust window rectangle to account for the non-client area
+            window_rect = RECT()
+            window_rect.left = x
+            window_rect.top = y
+            window_rect.right = x + width
+            window_rect.bottom = y + height
+
+            # Get extended window style
+            exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE)
+
+            # Adjust the window rectangle to include the non-client area
+            ctypes.windll.user32.AdjustWindowRectEx(ctypes.byref(window_rect), style, False, exStyle)
+
+            # Set window position and size
+            ctypes.windll.user32.SetWindowPos(
+                hwnd, None,
+                window_rect.left, window_rect.top,
+                window_rect.right - window_rect.left,
+                window_rect.bottom - window_rect.top,
+                0x0040)  # SWP_NOZORDER
+
+            # Inform the GUI framework about the change
+            self.setGeometry(
+                window_rect.left, window_rect.top,
+                window_rect.right - window_rect.left,
+                window_rect.bottom - window_rect.top
+            )
+            self.is_maximized = False
+
+        # Force a layout update and repaint
+        self.update()
+        self.repaint()
 
 
     # Функция для обновления стилей в зависимости от состояния окна
@@ -317,47 +402,19 @@ class MainWindow(QMainWindow):
         self.animation.start()
         self.animation.finished.connect(self.showMinimized)
     
-    def close_window(self):
-        if self.isMaximized():
-            self.showNormal()
-        current_height = self.height() 
+    def close_window_like_windows(self):
+        # Получаем дескриптор окна
+        hwnd = int(self.winId())
+        hWnd = wintypes.HWND(hwnd)
 
-        # Получаем текущие координаты окна
-        current_x = self.x()
-        current_y = self.y()
-        current_width = self.width()
+        # Определяем константы
+        WM_SYSCOMMAND = 0x0112
+        SC_CLOSE = 0xF060
 
-        # Настраиваем анимацию изменения геометрии
-        self.animation2 = QPropertyAnimation(self, b'geometry')
-        self.animation2.setDuration(100)
-        self.animation2.setStartValue(QRect(current_x, current_y, current_width, current_height))
-        self.animation2.setEndValue(QRect(current_x+30, current_y+30, current_width-60, current_height-60))
-        
-        # Запускаем анимацию и скрываем окно по завершении
-        
-        self.animation = QPropertyAnimation(self, b'windowOpacity')
-        self.animation.setDuration(100)
-        self.animation.setStartValue(1)
-        self.animation.setEndValue(0)
-        # Запускаем анимацию и скрываем окно по завершении
-        self.animation.start()
-        self.animation2.start()
-        self.animation.finished.connect(lambda: self.close())
+        # Отправляем сообщение WM_SYSCOMMAND с параметром SC_CLOSE
+        windll.user32.PostMessageW(hWnd, WM_SYSCOMMAND, SC_CLOSE, 0)
 
 
-    def restore_window(self):
-        if self.wasMaximized == True:
-            self.showMaximized()
-            self.wasMaximized = False
-        elif self.wasMaximized == False:
-        # Восстанавливаем окно и делаем его видимым
-            self.showNormal()
-
-        self.animation = QPropertyAnimation(self, b'windowOpacity')
-        self.animation.setDuration(100)
-        self.animation.setStartValue(0)
-        self.animation.setEndValue(1)
-        self.animation.start()
 
     def setDisabled_tabs(self, disable: bool):
         for i in range(self.ui.CentralTabs.count()):
@@ -413,6 +470,74 @@ class MainWindow(QMainWindow):
             frame.setGraphicsEffect(None)
 
 
+    def onSearchRequested(self, text, forward):
+        self.findInTextBrowser(text, forward)
+
+    def findInTextBrowser(self, text, forward=True):
+        cursor = self.ui.textBrowser.textCursor()
+        options = QTextDocument.FindFlag(0)
+        if not forward:
+            options |= QTextDocument.FindFlag.FindBackward
+
+        found = self.ui.textBrowser.find(text, options)
+        if not found:
+            if forward:
+                cursor.movePosition(QTextCursor.MoveOperation.Start)
+                
+            else:
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+
+            self.ui.textBrowser.setTextCursor(cursor)
+            found = self.ui.textBrowser.find(text, options)
+            if not found:
+                QMessageBox.information(self, "Search", f"Cannot find '{text}'")
+
+    def toggle_find(self):
+        if not self.find_label_hidden:
+            self.ui.find_label_2.hide()
+            self.find_label_hidden = True
+        else:
+            self.ui.find_label_2.show()
+            self.find_label_hidden = False
+    def onUpClicked(self):
+        text = self.ui.Find_line.text()
+        if text:
+            self.ui.Find_line.selectAll()
+            self.searchRequested.emit(text, False)
+
+    def onDownClicked(self):
+        text = self.ui.Find_line.text()
+        if text:
+            self.ui.Find_line.selectAll()
+            self.searchRequested.emit(text, True)
+
+    def window_resizing_frame(self):
+        hwnd = int(self.winId())
+        GWL_STYLE = -16
+        WS_CAPTION = 0x00C00000
+        WS_THICKFRAME = 0x00040000
+        WS_MAXIMIZEBOX = 0x00010000
+        WS_MINIMIZEBOX = 0x00020000
+
+        # Modify the window style to include WS_THICKFRAME
+        style = ctypes.windll.user32.GetWindowLongPtrW(hwnd, GWL_STYLE)
+        style = style & ~WS_CAPTION | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX
+        ctypes.windll.user32.SetWindowLongPtrW(hwnd, GWL_STYLE, style)
+
+        SWP_FRAMECHANGED = 0x0020
+        SWP_NOMOVE = 0x0002
+        SWP_NOSIZE = 0x0001
+        SWP_NOZORDER = 0x0004
+
+        # Apply the changes
+        ctypes.windll.user32.SetWindowPos(
+            hwnd, None, 0, 0, 0, 0,
+            SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER
+        )
+
+
+
+
 
 
 
@@ -421,70 +546,64 @@ class MainWindow(QMainWindow):
         ##
 
 
+    def nativeEvent(self, eventType, message):
+        if eventType == "windows_generic_MSG":
+            msg = ctypes.wintypes.MSG.from_address(message.__int__())
+
+            if msg.message == WM_NCCALCSIZE:
+                # Remove the standard frame by returning 0
+                return True, 0
+
+            elif msg.message == WM_NCHITTEST:
+                # Handle the hit test to allow resizing
+                pos = QtCore.QPoint(
+                    ctypes.c_short(msg.lParam & 0xFFFF).value,
+                    ctypes.c_short((msg.lParam >> 16) & 0xFFFF).value
+                )
+                pos = self.mapFromGlobal(pos)
+                w, h = self.width(), self.height()
+                x, y = pos.x(), pos.y()
+                lx = x
+                rx = w - x
+                ty = y
+                by = h - y
+
+                # Define the resize border width
+                border_width = 8
+
+                # Determine the region for resizing
+                if ty <= border_width and lx <= border_width:
+                    return True, HTTOPLEFT
+                elif ty <= border_width and rx <= border_width:
+                    return True, HTTOPRIGHT
+                elif by <= border_width and lx <= border_width:
+                    return True, HTBOTTOMLEFT
+                elif by <= border_width and rx <= border_width:
+                    return True, HTBOTTOMRIGHT
+                elif lx <= border_width:
+                    return True, HTLEFT
+                elif rx <= border_width:
+                    return True, HTRIGHT
+                elif ty <= border_width:
+                    return True, HTTOP
+                elif by <= border_width:
+                    return True, HTBOTTOM
+                else:
+                    return True, HTCLIENT
+
+        # If the event was not handled, return False and 0
+        return False, 0
+
     
     def label_mouse_press_event(self, event):
-        """Запоминаем начальные позиции при нажатии на метку."""
+        """Simulate the Windows title bar click to move the window."""
         if event.button() == Qt.MouseButton.LeftButton:
-            self.is_dragging = True
-            self.mouse_start_position = event.globalPosition().toPoint()
-            self.window_start_position = self.frameGeometry().topLeft()
+            hwnd = int(self.winId())
+            ctypes.windll.user32.ReleaseCapture()
+            ctypes.windll.user32.SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0)
 
 
-    def label_mouse_move_event(self, event):
-        """Перемещаем окно при перемещении мыши."""
-        if self.is_dragging:
-            if self.isMaximized():
-                self.toggle_fullscreen(True)
-            delta = event.globalPosition().toPoint() - self.mouse_start_position
-            self.move(self.window_start_position + delta)
 
-
-    def label_mouse_release_event(self, event):
-        """Прекращаем перетаскивание при отпускании кнопки."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.is_dragging = False
-
-
-    def resizeEvent(self, event):
-        """Переопределение события изменения размера окна для обновления позиции лейбла."""
-        super().resizeEvent(event)
-        self.resize_handle.move(self.width() - 8, self.height() - 8)
-
-
-    def mousePressEvent(self, event):
-        """Отслеживание начала изменения размера окна."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            # Проверяем, нажата ли мышь на нашем resize_handle
-            if self.resize_handle.geometry().contains(event.pos()):
-                self.is_resizing = True
-                self.old_pos = event.globalPosition().toPoint()  # Обновлено на globalPosition()
-
-
-    def mouseMoveEvent(self, event):
-        """Изменение размера окна при перемещении мыши."""
-        if self.is_resizing:
-            delta = event.globalPosition().toPoint() - self.old_pos  # Обновлено на globalPosition()
-            global_pos = event.globalPosition().toPoint()  # Глобальные координаты курсора
-            local_pos = self.mapFromGlobal(global_pos)
-            if global_pos.x() > self.old_pos.x():
-                new_width = self.width() + delta.x() if self.resize_handle.x() < local_pos.x() else self.width()
-            else:
-                new_width = self.width() + delta.x()
-            if global_pos.y() > self.old_pos.y():
-                new_height = self.height() + delta.y() if self.resize_handle.y() < local_pos.y() else self.height()
-            else:
-                new_height = self.height() + delta.y()
-            # Устанавливаем новый размер окна
-            self.ui.textBrowser.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-            self.resize(new_width, new_height)
-            self.old_pos = event.globalPosition().toPoint()  # Обновляем позицию
-
-
-    def mouseReleaseEvent(self, event):
-        """Остановка изменения размера при отпускании мыши."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.is_resizing = False
-            self.ui.textBrowser.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
 
 
     def paintEvent(self, event):
@@ -507,11 +626,9 @@ class MainWindow(QMainWindow):
         painter.setBrush(self.palette().window())
         painter.drawPath(path)
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
 
-    def changeEvent(self, event):
-        if event.type() == QtCore.QEvent.Type.WindowStateChange:
-            if self.windowState() == Qt.WindowState.WindowNoState:
-                self.restore_window()
 
 
 
@@ -558,11 +675,15 @@ class MainWindow(QMainWindow):
         if not self.websocket_client.isConnected():
             self.ui.conect_websc.setText("Connecting...")
             self.ui.conect_websc.setDisabled(True)
-            await self.websocket_client.connect()
+            
+            
+            await self.websocket_client.connect(uri='ws://192.168.0.106:8765')
+
             self.ui.textBrowser.clear()
-            await self.load_logs()
+            
             await asyncio.sleep(2)
             if self.websocket_client.isConnected():
+                await self.load_logs()
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connected.png"))
                 self.ui.label_6.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">Connected to:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.ip()}</span></p></body></html>")
                 self.ui.label_7.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">on port:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.port()}</span></p></body></html>")
@@ -604,6 +725,5 @@ if __name__ == "__main__":
 
     window = MainWindow()
     window.show()
-
     with loop:
         sys.exit(loop.run_forever())

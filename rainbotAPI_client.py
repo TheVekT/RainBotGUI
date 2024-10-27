@@ -1,17 +1,21 @@
 import asyncio
 import websockets
 import json
+import socket
 from urllib.parse import urlparse
 from PyQt6.QtCore import QObject, pyqtSignal
+
+
 class RainBot_Websocket(QObject):
     new_log_signal = pyqtSignal(str)
     connection_closed = pyqtSignal()
-    def __init__(self, uri):
+
+    def __init__(self, uri=None):
         super().__init__()  # Важно вызвать родительский конструктор
-        self.uri = uri
+        self.uri = uri  # URI будет задаваться позже, если не передан
         self.websocket = None
         self.logs_queue = asyncio.Queue()  # Очередь для хранения логов
-        
+
     def ip(self):
         """Возвращает IP-адрес сервера, к которому подключен WebSocket."""
         parsed_url = urlparse(self.uri)
@@ -22,8 +26,10 @@ class RainBot_Websocket(QObject):
         parsed_url = urlparse(self.uri)
         return parsed_url.port
 
-    async def connect(self):
+    async def connect(self, uri=None):
         """Подключение к WebSocket-серверу."""
+        if uri:
+            self.uri = uri  # Если передан новый URI, меняем его
         try:
             self.websocket = await websockets.connect(self.uri)
             print(f"Подключено к серверу: {self.uri}")
@@ -87,3 +93,18 @@ class RainBot_Websocket(QObject):
         # Ожидаем получения логов из очереди
         logs = await self.logs_queue.get()
         return logs
+
+    async def find_server(self, port=8765, subnet="192.168.0.", start_ip=1, end_ip=255):
+        """Метод для поиска WebSocket-сервера в локальной сети."""
+        for i in range(start_ip, end_ip + 1):
+            ip = f"{subnet}{i}"
+            try:
+                # Попытка установить соединение с сервером
+                uri = f"ws://{ip}:{port}"
+                print(f"Проверяем {uri}...")
+                async with websockets.connect(uri, timeout=1) as websocket:
+                    print(f"Найден сервер на {ip}")
+                    return uri
+            except (websockets.exceptions.InvalidURI, websockets.exceptions.ConnectionClosed, OSError):
+                continue  # Если сервер не найден, продолжаем сканировать
+        return None
