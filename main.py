@@ -1,29 +1,24 @@
 import sys
-import json
-import shutil
-import time
-from datetime import datetime, timedelta
-import numpy as np
-import os
 import asyncio
 import resources
-import websockets
+
 from qasync import QEventLoop, asyncSlot
 from rainbotAPI_client import RainBot_Websocket
-from designe import Ui_MainWindow 
-from PyQt6 import QtGui, QtCore, QtWidgets
-from PyQt6.QtCore import QIODevice, QBuffer, QTimer, Qt, QPropertyAnimation, QRect, QEasingCurve, QRectF, pyqtSlot, pyqtSignal
-from PyQt6.QtMultimedia import QMediaDevices, QAudioSource, QAudioFormat
-from PyQt6.QtWidgets import QMainWindow, QApplication, QDockWidget ,QPushButton, QWidget,QVBoxLayout, QHBoxLayout,QMessageBox, QSlider, QLabel, QTextEdit, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QFileDialog
-from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath, QCursor, QGuiApplication,  QTextDocument, QTextCursor
+from PyQt6 import QtGui, QtCore
+from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, pyqtSlot, pyqtSignal
+from PyQt6.QtWidgets import QMainWindow, QApplication,QPushButton, QWidget,QMessageBox, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
+from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath,  QTextDocument, QTextCursor
 from ctypes import windll, wintypes
 import ctypes
-from win import *
 
+from win import *
+from btns_style import get_btns_style_settings
+from main_window import Ui_MainWindow
 
 
 class MainWindow(QMainWindow):
     searchRequested = pyqtSignal(str, bool)
+    
     def __init__(self):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow()
@@ -45,7 +40,7 @@ class MainWindow(QMainWindow):
         self.minimized_buttons_texts_dict = {}
         self.logs_was_loaded = False
         self.find_label_hidden = False
-
+        self.saved_style = None
         # # 
         # # init function/ on load 
         # #
@@ -74,7 +69,7 @@ class MainWindow(QMainWindow):
 
         self.ui.wbsocket_btn.setChecked(True)
 
-        self.ui.build_info.setText("Build: 1.3.0")
+        self.ui.build_info.setText("Build: 1.3.1")
         self.ui.websck_status.hide()
 
 
@@ -97,7 +92,7 @@ class MainWindow(QMainWindow):
         self.ui.menuButton.clicked.connect(self.left_menu_minimize)
 
         self.ui.minimize_btn.clicked.connect(self.minimize_window)
-        self.ui.close_btn.clicked.connect(self.close_window_like_windows)
+        self.ui.close_btn.clicked.connect(self.close_window)
         self.ui.fullscreen_btn.clicked.connect(self.toggle_fullscreen)
 
         
@@ -139,20 +134,9 @@ class MainWindow(QMainWindow):
 
 
     def buttons_hover_init(self):
-        self.buttons_icons = {
-            self.ui.terminal_btn: {"default": ":/MainIcons/icons/terminalW.png", "hover": ":/MainIcons/icons/terminalB.png", "checkable": True},
-            self.ui.menuButton: {"default": ":/MainIcons/icons/sideBarW.png", "hover": ":/MainIcons/icons/sideBarB.png", "checkable": False},
-            self.ui.Settings_btn: {"default": ":/MainIcons/icons/settingsW.png", "hover": ":/MainIcons/icons/settingsB.png", "checkable": True},
-            self.ui.wbsocket_btn: {"default": ":/MainIcons/icons/websocketW.png", "hover": ":/MainIcons/icons/websocketB.png", "checkable": True},
-            self.ui.logs_btn: {"default": ":/MainIcons/icons/logsW.png", "hover": ":/MainIcons/icons/logsB.png", "checkable": True},
-            self.ui.stats_btn: {"default": ":/MainIcons/icons/statsW.png", "hover": ":/MainIcons/icons/statsB.png", "checkable": True},
-            self.ui.com_help_btn: {"default": ":/MainIcons/icons/command_helpW.png", "hover": ":/MainIcons/icons/command_helpB.png", "checkable": False},
-            self.ui.send_btn: {"default": ":/MainIcons/icons/sendW.png", "hover": ":/MainIcons/icons/sendB.png", "checkable": False},
-            self.ui.server_btn: {"default": ":/MainIcons/icons/serverW.png", "hover": ":/MainIcons/icons/serverB.png", "checkable": True},
-        }
-
+        self.BUTTON_STYLE_SETTINGS = get_btns_style_settings(self.ui)
         # Привязываем начальные иконки и события к кнопкам
-        for button, icons in self.buttons_icons.items():
+        for button, icons in self.BUTTON_STYLE_SETTINGS.items():
             button.setIcon(QIcon(icons["default"]))
             button.setCheckable(icons["checkable"])  # Устанавливаем состояние checkable
             button.enterEvent = self.create_enter_event(button)
@@ -212,7 +196,7 @@ class MainWindow(QMainWindow):
     def create_enter_event(self, button):
         def on_button_hover(event):
             if not button.isChecked():  # Только если кнопка не находится в состоянии checked
-                button.setIcon(QIcon(self.buttons_icons[button]["hover"]))
+                button.setIcon(QIcon(self.BUTTON_STYLE_SETTINGS[button]["hover"]))
             super(MainWindow, self).enterEvent(event)
         return on_button_hover
     
@@ -221,9 +205,10 @@ class MainWindow(QMainWindow):
         def on_button_leave(event):
             # Если кнопка не находится в состоянии checked, меняем иконку на default
             if not button.isChecked():
-                button.setIcon(QIcon(self.buttons_icons[button]["default"]))
+                button.setIcon(QIcon(self.BUTTON_STYLE_SETTINGS[button]["default"]))
             super(MainWindow, self).leaveEvent(event)
         return on_button_leave
+    
     def left_menu_minimize(self):
         if not self.left_menu_minimized:  # Свернуть меню
             self.animate_menu(QtCore.QSize(60, 0), QtCore.QSize(50, 0))
@@ -277,96 +262,28 @@ class MainWindow(QMainWindow):
         button = self.sender()  # Получаем кнопку, которая вызвала сигнал
         if checked:
             # Если кнопка активна (checked), сохраняем иконку hover
-            button.setIcon(QIcon(self.buttons_icons[button]["hover"]))
+            button.setIcon(QIcon(self.BUTTON_STYLE_SETTINGS[button]["hover"]))
         else:
             # Если кнопка становится неактивной, возвращаем иконку по умолчанию
-            button.setIcon(QIcon(self.buttons_icons[button]["default"]))
+            button.setIcon(QIcon(self.BUTTON_STYLE_SETTINGS[button]["default"]))
 
 
 
     def toggle_fullscreen(self):
         hwnd = int(self.winId())
-        GWL_STYLE = -16
-        GWL_EXSTYLE = -20
-        style = GetWindowLongPtr(hwnd, GWL_STYLE)
+        hWnd = wintypes.HWND(hwnd)
 
         if not self.is_maximized:
+            # Максимизируем окно стандартным способом
             self.update_window_styles(0)
-            # Save the current window position and size
-            rect = RECT()
-            ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
-            self.saved_rect = (rect.left, rect.top, rect.right, rect.bottom)
-            self.saved_style = style
-
-            # Modify window style to remove borders and title bar
-            style &= ~(0x00C00000 | 0x00040000)  # Remove WS_CAPTION and WS_THICKFRAME
-            style |= 0x80000000  # Add WS_POPUP
-            SetWindowLongPtr(hwnd, GWL_STYLE, style)
-
-            # Get monitor info
-            hMonitor = ctypes.windll.user32.MonitorFromWindow(hwnd, 0x00000002)  # MONITOR_DEFAULTTONEAREST
-            mi = MONITORINFO()
-            mi.cbSize = ctypes.sizeof(MONITORINFO)
-            ctypes.windll.user32.GetMonitorInfoW(hMonitor, ctypes.byref(mi))
-
-            # Set window to fullscreen
-            ctypes.windll.user32.SetWindowPos(
-                hwnd, None,
-                mi.rcMonitor.left, mi.rcMonitor.top,
-                mi.rcMonitor.right - mi.rcMonitor.left,
-                mi.rcMonitor.bottom - mi.rcMonitor.top,
-                0x0040)  # SWP_NOZORDER
-
-            # Inform the GUI framework about the change
-            self.setGeometry(
-                mi.rcMonitor.left, mi.rcMonitor.top,
-                mi.rcMonitor.right - mi.rcMonitor.left,
-                mi.rcMonitor.bottom - mi.rcMonitor.top
-            )
+            windll.user32.PostMessageW(hWnd, WM_SYSCOMMAND, SC_MAXIMIZE, 0)
             self.is_maximized = True
         else:
+            # Восстанавливаем окно стандартным способом
             self.update_window_styles(8)
-            # Restore original window style
-            style = self.saved_style
-            SetWindowLongPtr(hwnd, GWL_STYLE, style)
-
-            # Restore window size and position
-            x, y, right, bottom = self.saved_rect
-            width = right - x
-            height = bottom - y
-
-            # Adjust window rectangle to account for the non-client area
-            window_rect = RECT()
-            window_rect.left = x
-            window_rect.top = y
-            window_rect.right = x + width
-            window_rect.bottom = y + height
-
-            # Get extended window style
-            exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE)
-
-            # Adjust the window rectangle to include the non-client area
-            ctypes.windll.user32.AdjustWindowRectEx(ctypes.byref(window_rect), style, False, exStyle)
-
-            # Set window position and size
-            ctypes.windll.user32.SetWindowPos(
-                hwnd, None,
-                window_rect.left, window_rect.top,
-                window_rect.right - window_rect.left,
-                window_rect.bottom - window_rect.top,
-                0x0040)  # SWP_NOZORDER
-
-            # Inform the GUI framework about the change
-            self.setGeometry(
-                window_rect.left, window_rect.top,
-                window_rect.right - window_rect.left,
-                window_rect.bottom - window_rect.top
-            )
+            windll.user32.PostMessageW(hWnd, WM_SYSCOMMAND, SC_RESTORE, 0)
             self.is_maximized = False
 
-        # Force a layout update and repaint
-        self.update()
-        self.repaint()
 
 
     # Функция для обновления стилей в зависимости от состояния окна
@@ -389,31 +306,20 @@ class MainWindow(QMainWindow):
                                         f"border-top-left-radius: 0px;}}"
                                         f"QPushButton:hover{{"
                                         f"background-color: rgb(170, 0, 0);}}")
-    def minimize_window(self):
-        if self.isMaximized():
-            self.showNormal()
-            self.wasMaximized = True
-        self.animation = QPropertyAnimation(self, b'windowOpacity')
-        self.animation.setDuration(100)
-        self.animation.setStartValue(1)
-        self.animation.setEndValue(0)
-
-        # Запускаем анимацию и скрываем окно по завершении
-        self.animation.start()
-        self.animation.finished.connect(self.showMinimized)
     
-    def close_window_like_windows(self):
+    def close_window(self):
         # Получаем дескриптор окна
         hwnd = int(self.winId())
         hWnd = wintypes.HWND(hwnd)
-
-        # Определяем константы
-        WM_SYSCOMMAND = 0x0112
-        SC_CLOSE = 0xF060
-
         # Отправляем сообщение WM_SYSCOMMAND с параметром SC_CLOSE
         windll.user32.PostMessageW(hWnd, WM_SYSCOMMAND, SC_CLOSE, 0)
 
+    def minimize_window(self):
+        # Получаем дескриптор окна
+        hwnd = int(self.winId())
+        hWnd = wintypes.HWND(hwnd)
+        # Отправляем сообщение WM_SYSCOMMAND с параметром SC_MINIMIZE
+        windll.user32.PostMessageW(hWnd, WM_SYSCOMMAND, SC_MINIMIZE, 0)
 
 
     def setDisabled_tabs(self, disable: bool):
@@ -513,21 +419,11 @@ class MainWindow(QMainWindow):
 
     def window_resizing_frame(self):
         hwnd = int(self.winId())
-        GWL_STYLE = -16
-        WS_CAPTION = 0x00C00000
-        WS_THICKFRAME = 0x00040000
-        WS_MAXIMIZEBOX = 0x00010000
-        WS_MINIMIZEBOX = 0x00020000
 
         # Modify the window style to include WS_THICKFRAME
         style = ctypes.windll.user32.GetWindowLongPtrW(hwnd, GWL_STYLE)
         style = style & ~WS_CAPTION | WS_THICKFRAME | WS_MAXIMIZEBOX | WS_MINIMIZEBOX
         ctypes.windll.user32.SetWindowLongPtrW(hwnd, GWL_STYLE, style)
-
-        SWP_FRAMECHANGED = 0x0020
-        SWP_NOMOVE = 0x0002
-        SWP_NOSIZE = 0x0001
-        SWP_NOZORDER = 0x0004
 
         # Apply the changes
         ctypes.windll.user32.SetWindowPos(
@@ -539,22 +435,28 @@ class MainWindow(QMainWindow):
 
 
 
-
-
         ##
         ## EVENTS
         ##
-
+    
 
     def nativeEvent(self, eventType, message):
         if eventType == "windows_generic_MSG":
             msg = ctypes.wintypes.MSG.from_address(message.__int__())
-
             if msg.message == WM_NCCALCSIZE:
                 # Remove the standard frame by returning 0
                 return True, 0
+            elif msg.message == WM_SIZE:  # WM_SIZE
+                if msg.wParam == 2:  # SIZE_MAXIMIZED
+                    if not self.is_maximized:
+                        self.is_maximized = True
+                        self.update_window_styles(0)
+                elif msg.wParam == 0:  # SIZE_RESTORED
+                    if self.is_maximized:
+                        self.is_maximized = False
+                        self.update_window_styles(8)
 
-            elif msg.message == WM_NCHITTEST:
+            elif msg.message == WM_NCHITTEST and not self.is_maximized:
                 # Handle the hit test to allow resizing
                 pos = QtCore.QPoint(
                     ctypes.c_short(msg.lParam & 0xFFFF).value,
@@ -568,10 +470,8 @@ class MainWindow(QMainWindow):
                 ty = y
                 by = h - y
 
-                # Define the resize border width
                 border_width = 8
 
-                # Determine the region for resizing
                 if ty <= border_width and lx <= border_width:
                     return True, HTTOPLEFT
                 elif ty <= border_width and rx <= border_width:
@@ -590,7 +490,6 @@ class MainWindow(QMainWindow):
                     return True, HTBOTTOM
                 else:
                     return True, HTCLIENT
-
         # If the event was not handled, return False and 0
         return False, 0
 
