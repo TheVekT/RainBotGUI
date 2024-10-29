@@ -1,0 +1,31 @@
+<RCC>
+  <qresource prefix="MainIcons">
+    <file>icons/serverB.png</file>
+    <file>icons/serverW.png</file>
+    <file>icons/connected_step1.png</file>
+    <file>icons/connected_step2.png</file>
+    <file>icons/sendB.png</file>
+    <file>icons/command_helpB.png</file>
+    <file>icons/command_helpW.png</file>
+    <file>icons/connected.png</file>
+    <file>icons/connectError.png</file>
+    <file>icons/noconnected.png</file>
+    <file>icons/sendW.png</file>
+    <file>icons/websocketB.png</file>
+    <file>icons/websocketW.png</file>
+    <file>icons/logsB.png</file>
+    <file>icons/logsW.png</file>
+    <file>icons/settingsB.png</file>
+    <file>icons/settingsW.png</file>
+    <file>icons/statsB.png</file>
+    <file>icons/statsW.png</file>
+    <file>icons/terminalB.png</file>
+    <file>icons/terminalW.png</file>
+    <file>icons/rake.ico</file>
+    <file>icons/select_fls.png</file>
+    <file>icons/minimize.png</file>
+    <file>icons/sideBarB.png</file>
+    <file>icons/closeW.png</file>
+    <file>icons/sideBarW.png</file>
+  </qresource>
+</RCC>
