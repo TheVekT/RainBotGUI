@@ -1,4 +1,4 @@
-from ctypes import windll, wintypes
+
 import ctypes
 from ctypes import windll, wintypes, byref, Structure, sizeof, POINTER, c_int
 from ctypes.wintypes import HWND, HRGN, RECT

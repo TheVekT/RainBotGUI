@@ -1,8 +1,9 @@
-from rainbotgui.gui.main_window import MainWindow
-from qasync import QEventLoop
-from PyQt6.QtWidgets import QApplication
 import sys
 import asyncio
+
+from qasync import QEventLoop
+from rainbotgui.gui.main_window import MainWindow
+from PyQt6.QtWidgets import QApplication
 
 
 

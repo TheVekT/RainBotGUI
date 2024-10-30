@@ -1,19 +1,22 @@
-import sys
-import asyncio
 
-from rainbotgui.gui.resources import resources
+import asyncio
+import ctypes
+from ctypes import windll, wintypes
 from qasync import QEventLoop, asyncSlot
-from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
+
 from PyQt6 import QtGui, QtCore
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, pyqtSlot, pyqtSignal
-from PyQt6.QtWidgets import QMainWindow, QApplication,QPushButton, QWidget,QMessageBox, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
+from PyQt6.QtWidgets import QMainWindow,QPushButton, QWidget,QMessageBox, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath,  QTextDocument, QTextCursor
-from ctypes import windll, wintypes
-import ctypes
 
+from rainbotgui.gui.resources import resources
 from rainbotgui.utils.win import *
 from rainbotgui.utils.btns_style import get_btns_style_settings
+from rainbotgui.gui.widgets import Find_Widget
+from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
+from rainbotgui import __version__
 from .main_window_ui import Ui_MainWindow
+
 
 
 class MainWindow(QMainWindow):
@@ -52,7 +55,6 @@ class MainWindow(QMainWindow):
         
         self.switch_tab(3, 500)
         self.buttons_hover_init()
-        self.toggle_find()
         self.window_resizing_frame()
 
 
@@ -66,13 +68,15 @@ class MainWindow(QMainWindow):
 
         self.ui.label_6.setText("")
         self.ui.label_7.setText("")
+        self.set_build_version()
 
         self.ui.wbsocket_btn.setChecked(True)
-
-        self.ui.build_info.setText("Build: 1.3.1")
+        
+        
         self.ui.websck_status.hide()
-
-
+        
+        self.find_in_terminal = Find_Widget(parent=self.ui.buttons_in_terminal, 
+            layout=self.ui.verticalLayout_6, pos=3)
         
 
         self.setDisabled_tabs(True)
@@ -103,9 +107,7 @@ class MainWindow(QMainWindow):
         self.ui.wbsocket_btn.clicked.connect(lambda: self.switch_tab(3))
         self.ui.server_btn.clicked.connect(lambda: self.switch_tab(5))
 
-        self.ui.button_find_in_console.clicked.connect(self.toggle_find)
-        self.ui.upBotton.clicked.connect(self.onUpClicked)
-        self.ui.downBotton.clicked.connect(self.onDownClicked)
+
         self.searchRequested.connect(self.onSearchRequested)
 
 
@@ -398,13 +400,6 @@ class MainWindow(QMainWindow):
             if not found:
                 QMessageBox.information(self, "Search", f"Cannot find '{text}'")
 
-    def toggle_find(self):
-        if not self.find_label_hidden:
-            self.ui.find_label_2.hide()
-            self.find_label_hidden = True
-        else:
-            self.ui.find_label_2.show()
-            self.find_label_hidden = False
     def onUpClicked(self):
         text = self.ui.Find_line.text()
         if text:
@@ -430,6 +425,9 @@ class MainWindow(QMainWindow):
             hwnd, None, 0, 0, 0, 0,
             SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER
         )
+
+    def set_build_version(self):
+        self.ui.build_info.setText(__version__)
 
 
 
