@@ -1,8 +1,10 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import QObject, pyqtSlot, pyqtSignal
 
-
-class Find_Widget(object):
+class Find_Widget(QObject):
+    searchRequested = pyqtSignal(str, bool)
     def __init__(self, parent, layout, pos):
+        super().__init__(parent)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         
@@ -41,10 +43,10 @@ class Find_Widget(object):
         self.find_updown_btns.setContentsMargins(1, 1, 1, 1)
         self.find_updown_btns.setSpacing(1)
         self.find_updown_btns.setObjectName("find_updown_btns")
-        self.upBotton = QtWidgets.QPushButton(parent=self.find_updown_btns_2)
-        self.upBotton.setMinimumSize(QtCore.QSize(16, 16))
-        self.upBotton.setMaximumSize(QtCore.QSize(16, 16))
-        self.upBotton.setStyleSheet("QPushButton{\n"
+        self.upButton = QtWidgets.QPushButton(parent=self.find_updown_btns_2)
+        self.upButton.setMinimumSize(QtCore.QSize(16, 16))
+        self.upButton.setMaximumSize(QtCore.QSize(16, 16))
+        self.upButton.setStyleSheet("QPushButton{\n"
 "    border-radius: 3px;\n"
 "    background-color: rgba(0,0,0,0);\n"
 "    color: white;\n"
@@ -56,12 +58,12 @@ class Find_Widget(object):
 "    background-color: #FFDAB9;\n"
 "}\n"
 "")
-        self.upBotton.setObjectName("upBotton")
-        self.find_updown_btns.addWidget(self.upBotton)
-        self.downBotton = QtWidgets.QPushButton(parent=self.find_updown_btns_2)
-        self.downBotton.setMinimumSize(QtCore.QSize(16, 16))
-        self.downBotton.setMaximumSize(QtCore.QSize(16, 16))
-        self.downBotton.setStyleSheet("QPushButton{\n"
+        self.upButton.setObjectName("upBotton")
+        self.find_updown_btns.addWidget(self.upButton)
+        self.downButton = QtWidgets.QPushButton(parent=self.find_updown_btns_2)
+        self.downButton.setMinimumSize(QtCore.QSize(16, 16))
+        self.downButton.setMaximumSize(QtCore.QSize(16, 16))
+        self.downButton.setStyleSheet("QPushButton{\n"
 "    border-radius: 3px;\n"
 "    background-color: rgba(0,0,0,0);\n"
 "    color: white;\n"
@@ -73,15 +75,30 @@ class Find_Widget(object):
 "    background-color: #FFDAB9;\n"
 "}\n"
 "")
-        self.downBotton.setObjectName("downBotton")
-        self.find_updown_btns.addWidget(self.downBotton)
+        self.downButton.setObjectName("downBotton")
+        self.find_updown_btns.addWidget(self.downButton)
         self.find_label.addWidget(self.find_updown_btns_2)
         self.horizontalLayout.addWidget(self.find_label_2)
         layout.insertWidget(pos, self.find_label_2)
         self.retranslateUi()
+        self.upButton.clicked.connect(self.onUpClicked)
+        self.downButton.clicked.connect(self.onDownClicked)
+        self.find_label_2.hide()
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
         self.Find_line.setPlaceholderText(_translate("Form", "Find text"))
-        self.upBotton.setText(_translate("Form", "▲"))
-        self.downBotton.setText(_translate("Form", "▼"))
+        self.upButton.setText(_translate("Form", "▲"))
+        self.downButton.setText(_translate("Form", "▼"))
+
+    def onUpClicked(self):
+        text = self.Find_line.text()
+        if text:
+            self.Find_line.selectAll()
+            self.searchRequested.emit(text, False)
+
+    def onDownClicked(self):
+        text = self.Find_line.text()
+        if text:
+            self.Find_line.selectAll()
+            self.searchRequested.emit(text, True)

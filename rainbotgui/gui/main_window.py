@@ -14,13 +14,12 @@ from rainbotgui.utils.win import *
 from rainbotgui.utils.btns_style import get_btns_style_settings
 from rainbotgui.gui.widgets import Find_Widget
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
-from rainbotgui import __version__
 from .main_window_ui import Ui_MainWindow
 
 
 
 class MainWindow(QMainWindow):
-    searchRequested = pyqtSignal(str, bool)
+    
     
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -42,7 +41,6 @@ class MainWindow(QMainWindow):
         self.window_start_size = None
         self.minimized_buttons_texts_dict = {}
         self.logs_was_loaded = False
-        self.find_label_hidden = False
         self.saved_style = None
         # # 
         # # init function/ on load 
@@ -78,7 +76,6 @@ class MainWindow(QMainWindow):
         self.find_in_terminal = Find_Widget(parent=self.ui.buttons_in_terminal, 
             layout=self.ui.verticalLayout_6, pos=3)
         
-
         self.setDisabled_tabs(True)
 
         # #
@@ -86,6 +83,8 @@ class MainWindow(QMainWindow):
         # #
 
         self.ui.headerBar.mousePressEvent = self.label_mouse_press_event
+
+        
 
 
         self.ui.LineSenDCommand.returnPressed.connect(self.sent_console_command)
@@ -108,10 +107,10 @@ class MainWindow(QMainWindow):
         self.ui.server_btn.clicked.connect(lambda: self.switch_tab(5))
 
 
-        self.searchRequested.connect(self.onSearchRequested)
+        self.find_in_terminal.searchRequested.connect(self.search_in_terminal)
+        self.ui.button_find_in_console.clicked.connect(lambda: self.toggle_find(self.find_in_terminal))
 
-
-
+        
         # #
         # # websocket
         # # 
@@ -286,6 +285,11 @@ class MainWindow(QMainWindow):
             windll.user32.PostMessageW(hWnd, WM_SYSCOMMAND, SC_RESTORE, 0)
             self.is_maximized = False
 
+    def toggle_find(self, finder: Find_Widget):
+        if self.find_in_terminal.find_label_2.isHidden():
+            self.find_in_terminal.find_label_2.show()
+        else:
+            self.find_in_terminal.find_label_2.hide()
 
 
     # Функция для обновления стилей в зависимости от состояния окна
@@ -378,7 +382,7 @@ class MainWindow(QMainWindow):
             frame.setGraphicsEffect(None)
 
 
-    def onSearchRequested(self, text, forward):
+    def search_in_terminal(self, text, forward):
         self.findInTextBrowser(text, forward)
 
     def findInTextBrowser(self, text, forward=True):
@@ -400,17 +404,7 @@ class MainWindow(QMainWindow):
             if not found:
                 QMessageBox.information(self, "Search", f"Cannot find '{text}'")
 
-    def onUpClicked(self):
-        text = self.ui.Find_line.text()
-        if text:
-            self.ui.Find_line.selectAll()
-            self.searchRequested.emit(text, False)
 
-    def onDownClicked(self):
-        text = self.ui.Find_line.text()
-        if text:
-            self.ui.Find_line.selectAll()
-            self.searchRequested.emit(text, True)
 
     def window_resizing_frame(self):
         hwnd = int(self.winId())
@@ -427,6 +421,7 @@ class MainWindow(QMainWindow):
         )
 
     def set_build_version(self):
+        from rainbotgui import __version__
         self.ui.build_info.setText(__version__)
 
 
