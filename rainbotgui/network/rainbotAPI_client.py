@@ -1,110 +1,110 @@
 import asyncio
 import websockets
 import json
-import socket
 from urllib.parse import urlparse
 from PyQt6.QtCore import QObject, pyqtSignal
-
 
 class RainBot_Websocket(QObject):
     new_log_signal = pyqtSignal(str)
     connection_closed = pyqtSignal()
 
     def __init__(self, uri=None):
-        super().__init__()  # Важно вызвать родительский конструктор
-        self.uri = uri  # URI будет задаваться позже, если не передан
+        super().__init__()
+        self.uri = uri
         self.websocket = None
-        self.logs_queue = asyncio.Queue()  # Очередь для хранения логов
+        self.logs_queue = asyncio.Queue()
 
     def ip(self):
-        """Возвращает IP-адрес сервера, к которому подключен WebSocket."""
+        """Returns the IP address of the connected server."""
         parsed_url = urlparse(self.uri)
         return parsed_url.hostname
 
     def port(self):
-        """Возвращает порт сервера, к которому подключен WebSocket."""
+        """Returns the port of the connected server."""
         parsed_url = urlparse(self.uri)
         return parsed_url.port
 
-    async def connect(self, uri=None):
-        """Подключение к WebSocket-серверу."""
+    async def connect(self, uri=None, connection_type="gui_client"):
+        """Connects to the WebSocket server and sends the connection type."""
         if uri:
-            self.uri = uri  # Если передан новый URI, меняем его
+            self.uri = uri
         try:
             self.websocket = await websockets.connect(self.uri)
-            print(f"Подключено к серверу: {self.uri}")
-            # Запуск фоновой задачи для получения сообщений
+            print(f"Connected to server: {self.uri}")
+            # Send initial connection type message
+            initial_message = {
+                "connection-type": connection_type
+            }
+            await self.websocket.send(json.dumps(initial_message))
+            # Start background task to receive messages
             asyncio.create_task(self.receive_messages())
         except Exception as e:
-            print(f"Ошибка при подключении: {e}")
+            print(f"Connection error: {e}")
 
     async def send_command(self, command):
-        """Отправка команды с одним аргументом (строкой) на сервер."""
+        """Sends a command to the server."""
         if self.websocket:
             try:
                 await self.websocket.send(command)
-                print(f"Отправлено сообщение: {command}")
+                print(f"Sent message: {command}")
             except Exception as e:
-                print(f"Ошибка при отправке сообщения: {e}")
+                print(f"Error sending message: {e}")
         else:
-            print("Нет активного соединения с сервером.")
+            print("No active connection to the server.")
 
     async def disconnect(self):
-        """Отключение от WebSocket-сервера."""
+        """Disconnects from the WebSocket server."""
         if self.websocket:
             try:
                 await self.websocket.close()
-                print("Соединение закрыто.")
+                print("Connection closed.")
             except Exception as e:
-                print(f"Ошибка при закрытии соединения: {e}")
+                print(f"Error closing connection: {e}")
         else:
-            print("Нет активного соединения для закрытия.")
+            print("No active connection to close.")
 
     def isConnected(self):
-        """Проверка подключения к серверу WebSocket."""
+        """Checks if the client is connected to the server."""
         return self.websocket is not None and self.websocket.open
 
     async def receive_messages(self):
-        """Фоновая задача для получения всех сообщений с сервера."""
+        """Background task to receive messages from the server."""
         try:
             while True:
                 message = await self.websocket.recv()
-                # Пытаемся распарсить сообщение как JSON
+                # Try to parse the message as JSON
                 try:
                     data = json.loads(message)
                     if 'type' in data and data['type'] == 'logs':
-                        await self.logs_queue.put(data['message'])  # Кладем логи в очередь
+                        await self.logs_queue.put(data['message'])
                     elif 'type' in data and data['type'] == 'new_log_message':
                         self.new_log_signal.emit(data['message'])
                     else:
-                        print(f"Получено другое сообщение: {data}")
+                        print(f"Received other message: {data}")
                 except json.JSONDecodeError:
-                    print(f"Ошибка при разборе сообщения: {message}")
+                    print(f"Error parsing message: {message}")
         except websockets.exceptions.ConnectionClosed:
-            print("Соединение с сервером закрыто.")
+            print("Connection to server closed.")
             self.connection_closed.emit()
         except Exception as e:
-            print(f"Ошибка при получении сообщений: {e}")
+            print(f"Error receiving messages: {e}")
 
     async def get_logs(self):
-        """Запрос на получение логов."""
-        # Отправляем команду для получения логов
+        """Requests logs from the server."""
         await self.send_command("@get_logs")
-        # Ожидаем получения логов из очереди
         logs = await self.logs_queue.get()
         return logs
 
     async def find_server(self, port=8765, subnet="192.168.0.", start_ip=1, end_ip=255):
-        """Метод для поиска WebSocket-сервера в локальной сети."""
+        """Finds a WebSocket server in the local network."""
         for i in range(start_ip, end_ip + 1):
             ip = f"{subnet}{i}"
             try:
-                # Попытка установить соединение с сервером
                 uri = f"ws://{ip}:{port}"
-                print(f"Проверяем {uri}...")
-                async with websockets.connect(uri, timeout=1) as websocket:
-                    print(f"Найден сервер на {ip}")
+                print(f"Checking {uri}...")
+                async with websockets.connect(uri, timeout=1):
+                    print(f"Server found at {ip}")
                     return uri
             except (websockets.exceptions.InvalidURI, websockets.exceptions.ConnectionClosed, OSError):
-                continue  # Если сервер не найден, продолжаем сканировать
+                continue
         return None
