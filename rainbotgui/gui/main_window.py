@@ -74,7 +74,9 @@ class MainWindow(QMainWindow):
         self.ui.websck_status.hide()
         
         self.find_in_terminal = Find_Widget(parent=self.ui.buttons_in_terminal, 
-            layout=self.ui.verticalLayout_6, pos=3)
+            layout=self.ui.verticalLayout_6, 
+            pos=3,
+            browser=self.ui.textBrowser)
         
         self.setDisabled_tabs(True)
 
@@ -107,7 +109,7 @@ class MainWindow(QMainWindow):
         self.ui.server_btn.clicked.connect(lambda: self.switch_tab(5))
 
 
-        self.find_in_terminal.searchRequested.connect(self.search_in_terminal)
+
         self.ui.button_find_in_console.clicked.connect(lambda: self.toggle_find(self.find_in_terminal))
 
         
@@ -382,27 +384,7 @@ class MainWindow(QMainWindow):
             frame.setGraphicsEffect(None)
 
 
-    def search_in_terminal(self, text, forward):
-        self.findInTextBrowser(text, forward)
 
-    def findInTextBrowser(self, text, forward=True):
-        cursor = self.ui.textBrowser.textCursor()
-        options = QTextDocument.FindFlag(0)
-        if not forward:
-            options |= QTextDocument.FindFlag.FindBackward
-
-        found = self.ui.textBrowser.find(text, options)
-        if not found:
-            if forward:
-                cursor.movePosition(QTextCursor.MoveOperation.Start)
-                
-            else:
-                cursor.movePosition(QTextCursor.MoveOperation.End)
-
-            self.ui.textBrowser.setTextCursor(cursor)
-            found = self.ui.textBrowser.find(text, options)
-            if not found:
-                QMessageBox.information(self, "Search", f"Cannot find '{text}'")
 
 
 
