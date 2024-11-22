@@ -14,8 +14,8 @@ from rainbotgui.utils.win import *
 from rainbotgui.utils.btns_style import get_btns_style_settings
 from rainbotgui.gui.widgets import Find_Widget
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
-from .main_window_ui import Ui_MainWindow
-
+from rainbotgui.gui.main_window_ui import Ui_MainWindow
+from rainbotgui.gui.pages_func import Terminal_Page, Websocket_Page
 
 
 class MainWindow(QMainWindow):
@@ -32,17 +32,10 @@ class MainWindow(QMainWindow):
         # #
         self.left_menu_minimized = False
         self.animations = []
-        self.wasMaximized = False
-        self.is_dragging = False
-        self.is_resizing = False
         self.is_maximized = False
-        self.mouse_start_position = None
         self.window_start_position = None
-        self.window_start_size = None
         self.minimized_buttons_texts_dict = {}
-        self.logs_was_loaded = False
         self.saved_style = None
-        self.used_commands = []
         
         
         
@@ -50,40 +43,27 @@ class MainWindow(QMainWindow):
         # # init function/ on load 
         # #
 
-        self.ui.textBrowser.setFontPointSize(11)
-        self.ui.textBrowser.setFontFamily("JetBrains Mono,Helvetica")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
         
         self.switch_tab(3, 500)
         self.buttons_hover_init()
         self.window_resizing_frame()
-
+        self.websocket_client = RainBot_Websocket()
 
         # # 
         # # widgets init
         # #
         
 
+        self.terminal_page = Terminal_Page(self.websocket_client, self.ui, self)
+        self.websocket_page = Websocket_Page(self.websocket_client, self.ui, self)
         self.setMouseTracking(True)
         self.ui.centralwidget.setMouseTracking(True)
 
-        self.ui.label_6.setText("")
-        self.ui.label_7.setText("")
         self.set_build_version()
+        
 
-        self.ui.wbsocket_btn.setChecked(True)
-        
-        
-        self.ui.websck_status.hide()
-        
-        self.find_in_terminal = Find_Widget(parent=self.ui.buttons_in_terminal, 
-            layout=self.ui.verticalLayout_6, 
-            pos=3,
-            browser=self.ui.textBrowser)
-        
-        
-        self.ui.LineSenDCommand.installEventFilter(self)
         self.setDisabled_tabs(True)
 
         # #
@@ -92,13 +72,7 @@ class MainWindow(QMainWindow):
 
         self.ui.headerBar.mousePressEvent = self.label_mouse_press_event
 
-        
 
-
-        self.ui.LineSenDCommand.returnPressed.connect(self.sent_console_command)
-        self.ui.send_btn.clicked.connect(self.sent_console_command)
-
-        self.ui.conect_websc.clicked.connect(self.connectWS)
 
         self.ui.menuButton.clicked.connect(self.left_menu_minimize)
 
@@ -115,19 +89,12 @@ class MainWindow(QMainWindow):
         self.ui.server_btn.clicked.connect(lambda: self.switch_tab(5))
 
 
-
-        self.ui.button_find_in_console.clicked.connect(lambda: self.toggle_find(self.find_in_terminal))
-
         
         # #
         # # websocket
         # # 
-        self.websocket_client = RainBot_Websocket()
-                # Подключаем сигнал нового лога к слоту обновления UI
-        self.websocket_client.new_log_signal.connect(self.handle_new_log_message)
-        self.websocket_client.connection_closed.connect(self.WS_on_diconnect)
-
-
+        
+        pass
 
 
 ###########                        ###########
@@ -293,13 +260,6 @@ class MainWindow(QMainWindow):
             windll.user32.PostMessageW(hWnd, WM_SYSCOMMAND, SC_RESTORE, 0)
             self.is_maximized = False
 
-    def toggle_find(self, finder: Find_Widget):
-        if self.find_in_terminal.find_label_2.isHidden():
-            self.find_in_terminal.find_label_2.show()
-        else:
-            self.find_in_terminal.find_label_2.hide()
-
-
     # Функция для обновления стилей в зависимости от состояния окна
     def update_window_styles(self, border_radius):
         # Устанавливаем стили окна
@@ -419,20 +379,7 @@ class MainWindow(QMainWindow):
         ## EVENTS
         ##
     
-    def eventFilter(self, source, event):
-        # Проверяем, что событие связано с нашим QLineEdit
-        if source == self.ui.LineSenDCommand:
-            # Проверяем, что событие — это нажатие клавиши
-            if event.type() == QEvent.Type.KeyPress:
-                if event.key() == Qt.Key.Key_Up:
-                    # self.return_command_ILE(True)
-                    return True
-                elif event.key() == Qt.Key.Key_Down:
-                    # self.return_command_ILE(False)
-                    return True
 
-        # Передаём остальные события родительскому классу
-        return super().eventFilter(source, event)
     
     
     
@@ -527,92 +474,3 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event):
         super().resizeEvent(event)
 
-
-
-
-
-        ##
-        ## Websocket
-        ##
-    @asyncSlot()
-    async def load_logs(self):
-        logs = await self.websocket_client.get_logs()
-        for log_str in logs:
-            # Используем insertHtml, чтобы добавить логи с HTML-разметкой
-            self.ui.textBrowser.append(log_str)
-
-
-
-
-    @asyncSlot()
-    async def sent_console_command(self):
-        text = self.ui.LineSenDCommand.text()
-        if text != "":
-            if text == "/disconnect":
-                await self.websocket_client.disconnect()
-                self.ui.textBrowser.append(text)
-                self.ui.LineSenDCommand.clear()
-                return
-            
-            await self.websocket_client.send_command(text)
-            self.ui.textBrowser.append(text)
-            self.used_commands.append(text)
-            self.ui.LineSenDCommand.clear()
-
-    @asyncSlot()
-    async def WS_on_diconnect(self):
-        self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/noconnected.png"))
-        self.ui.conect_websc.setText("Connect")
-        await self.websocket_client.disconnect()
-        self.ui.label_6.setText("")
-        self.ui.label_7.setText("")
-        self.setDisabled_tabs(True)
-        self.ui.conect_websc.setChecked(False)
-        self.ui.websck_status.hide()
-
-    @asyncSlot()
-    async def connectWS(self):
-        """Асинхронное подключение к WebSocket-серверу."""
-        if not self.websocket_client.isConnected():
-            self.ui.conect_websc.setText("Connecting...")
-            self.ui.conect_websc.setDisabled(True)
-            
-            
-            await self.websocket_client.connect(uri='ws://192.168.0.106:8765')
-
-            self.ui.textBrowser.clear()
-            
-            await asyncio.sleep(2)
-            if self.websocket_client.isConnected():
-                await self.load_logs()
-                self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connected.png"))
-                self.ui.label_6.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">Connected to:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.ip()}</span></p></body></html>")
-                self.ui.label_7.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">on port:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.port()}</span></p></body></html>")
-                self.ui.label_6.show()
-                self.ui.label_7.show()
-                self.ui.conect_websc.setText("Connected")
-                self.ui.conect_websc.setDisabled(False)
-                self.setDisabled_tabs(False)
-                self.ui.websck_status.show()
-            else:
-                self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connectError.png"))
-                await asyncio.sleep(3)
-                self.ui.conect_websc.setText("Connect")
-                self.ui.label_6.setText("")
-                self.ui.label_7.setText("")
-                self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/noconnected.png"))
-                self.ui.conect_websc.setChecked(False)
-                self.ui.conect_websc.setDisabled(False)
-                self.setDisabled_tabs(True)
-        else:
-            self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/noconnected.png"))
-            self.ui.conect_websc.setText("Connect")
-            await self.websocket_client.disconnect()
-            self.ui.label_6.setText("")
-            self.ui.label_7.setText("")
-            self.setDisabled_tabs(True)
-    def handle_new_log_message(self, log_message):
-        """Метод для обработки нового сообщения."""
-        self.ui.textBrowser.append(log_message)
-        # Здесь вы можете обновить элементы интерфейса с полученным сообщением
-            
