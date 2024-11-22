@@ -5,7 +5,7 @@ from ctypes import windll, wintypes
 from qasync import QEventLoop, asyncSlot
 
 from PyQt6 import QtGui, QtCore
-from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, pyqtSlot, pyqtSignal
+from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, pyqtSlot, pyqtSignal, QEvent
 from PyQt6.QtWidgets import QMainWindow,QPushButton, QWidget,QMessageBox, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath,  QTextDocument, QTextCursor
 
@@ -42,6 +42,10 @@ class MainWindow(QMainWindow):
         self.minimized_buttons_texts_dict = {}
         self.logs_was_loaded = False
         self.saved_style = None
+        self.used_commands = []
+        
+        
+        
         # # 
         # # init function/ on load 
         # #
@@ -78,6 +82,8 @@ class MainWindow(QMainWindow):
             pos=3,
             browser=self.ui.textBrowser)
         
+        
+        self.ui.LineSenDCommand.installEventFilter(self)
         self.setDisabled_tabs(True)
 
         # #
@@ -407,12 +413,30 @@ class MainWindow(QMainWindow):
         self.ui.build_info.setText(__version__)
 
 
-
-
+            
 
         ##
         ## EVENTS
         ##
+    
+    def eventFilter(self, source, event):
+        # Проверяем, что событие связано с нашим QLineEdit
+        if source == self.ui.LineSenDCommand:
+            # Проверяем, что событие — это нажатие клавиши
+            if event.type() == QEvent.Type.KeyPress:
+                if event.key() == Qt.Key.Key_Up:
+                    # self.return_command_ILE(True)
+                    return True
+                elif event.key() == Qt.Key.Key_Down:
+                    # self.return_command_ILE(False)
+                    return True
+
+        # Передаём остальные события родительскому классу
+        return super().eventFilter(source, event)
+    
+    
+    
+    
     
 
     def nativeEvent(self, eventType, message):
@@ -522,14 +546,17 @@ class MainWindow(QMainWindow):
 
     @asyncSlot()
     async def sent_console_command(self):
-        if self.ui.LineSenDCommand.text() != "":
-            if self.ui.LineSenDCommand.text() == "/disconnect":
+        text = self.ui.LineSenDCommand.text()
+        if text != "":
+            if text == "/disconnect":
                 await self.websocket_client.disconnect()
-                self.ui.textBrowser.append(self.ui.LineSenDCommand.text())
+                self.ui.textBrowser.append(text)
                 self.ui.LineSenDCommand.clear()
                 return
-            await self.websocket_client.send_command(self.ui.LineSenDCommand.text())
-            self.ui.textBrowser.append(self.ui.LineSenDCommand.text())
+            
+            await self.websocket_client.send_command(text)
+            self.ui.textBrowser.append(text)
+            self.used_commands.append(text)
             self.ui.LineSenDCommand.clear()
 
     @asyncSlot()
