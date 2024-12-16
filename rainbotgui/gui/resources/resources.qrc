@@ -1,5 +1,9 @@
 <RCC>
   <qresource prefix="MainIcons">
+    <file>icons/error_r.png</file>
+    <file>icons/close_notify.png</file>
+    <file>icons/info_w.png</file>
+    <file>icons/success_l.png</file>
     <file>icons/serverB.png</file>
     <file>icons/serverW.png</file>
     <file>icons/connected_step1.png</file>

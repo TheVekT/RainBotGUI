@@ -6,23 +6,25 @@ from rainbotgui.gui.resources import resources
 from rainbotgui.gui.widgets import Find_Widget
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
-
-
+from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify
 
 class Terminal_Page(QObject):
     def __init__(self, wbsocet_obj: RainBot_Websocket, ui: Ui_MainWindow, main_win):
         super().__init__()
         self.ui = ui
         self.used_commands = []
+        self.unique_commands = []  # Список уникальных подряд команд для переключения
+        self.command_index = -1  # Индекс текущей команды в unique_commands
         self.websocket_client = wbsocet_obj
         self.ui.textBrowser.setFontPointSize(11)
         self.ui.textBrowser.setFontFamily("JetBrains Mono,Helvetica")
-        self.ui.wbsocket_btn.setChecked(True)
-        self.find_in_terminal = Find_Widget(parent=self.ui.buttons_in_terminal, 
-            layout=self.ui.verticalLayout_6, 
+        self.find_in_terminal = Find_Widget(
+            parent=self.ui.buttons_in_terminal,
+            layout=self.ui.verticalLayout_6,
             pos=3,
-            browser=self.ui.textBrowser)
-        self.ui.LineSenDCommand.installEventFilter(main_win)
+            browser=self.ui.textBrowser
+        )
+        self.ui.LineSenDCommand.installEventFilter(self)
         self.ui.LineSenDCommand.returnPressed.connect(self.sent_console_command)
         self.ui.send_btn.clicked.connect(self.sent_console_command)
         self.ui.button_find_in_console.clicked.connect(self.toggle_find)
@@ -35,20 +37,45 @@ class Terminal_Page(QObject):
             self.find_in_terminal.find_label_2.hide()
 
     def eventFilter(self, source, event):
-        # Проверяем, что событие связано с нашим QLineEdit
-        if source == self.ui.LineSenDCommand:
-            # Проверяем, что событие — это нажатие клавиши
-            if event.type() == QEvent.Type.KeyPress:
-                if event.key() == Qt.Key.Key_Up:
-                    # self.return_command_ILE(True)
-                    return True
-                elif event.key() == Qt.Key.Key_Down:
-                    # self.return_command_ILE(False)
-                    return True
+        if source == self.ui.LineSenDCommand and event.type() == QEvent.Type.KeyPress:
+            if event.key() == Qt.Key.Key_Up:
+                self.navigate_command_history(up=True)
+                return True
+            elif event.key() == Qt.Key.Key_Down:
+                self.navigate_command_history(up=False)
+                return True
 
-        # Передаём остальные события родительскому классу
         return super().eventFilter(source, event)
-    
+
+    def update_unique_commands(self):
+        """Обновление списка уникальных подряд команд."""
+        self.unique_commands = []
+        prev_command = None
+        for command in self.used_commands:
+            if command != prev_command:
+                self.unique_commands.append(command)
+                prev_command = command
+
+    def navigate_command_history(self, up: bool):
+        """Навигация по истории уникальных команд."""
+        if not self.unique_commands:
+            return
+
+        if up:
+            self.command_index = max(0, self.command_index - 1)
+            command = self.unique_commands[self.command_index]
+            self.ui.LineSenDCommand.setText(command)
+        else:
+            if self.command_index < len(self.unique_commands) - 1:
+                self.command_index += 1
+                command = self.unique_commands[self.command_index]
+                self.ui.LineSenDCommand.setText(command)
+            else:
+                self.command_index = len(self.unique_commands)  # Выходим за пределы истории
+                self.ui.LineSenDCommand.clear()
+
+        self.ui.LineSenDCommand.setCursorPosition(len(self.ui.LineSenDCommand.text()))
+
     @asyncSlot()
     async def sent_console_command(self):
         text = self.ui.LineSenDCommand.text()
@@ -58,17 +85,18 @@ class Terminal_Page(QObject):
                 self.ui.textBrowser.append(text)
                 self.ui.LineSenDCommand.clear()
                 return
-            
+
             await self.websocket_client.send_command(text)
-            self.ui.textBrowser.append(text)
+            self.ui.textBrowser.append(f'>>> {text}')
             self.used_commands.append(text)
+            self.update_unique_commands()
+            self.command_index = len(self.unique_commands)  # Сбрасываем индекс на конец списка
             self.ui.LineSenDCommand.clear()
 
     def handle_new_log_message(self, log_message):
         """Метод для обработки нового сообщения."""
         self.ui.textBrowser.append(log_message)
-        # Здесь вы можете обновить элементы интерфейса с полученным сообщением
-        
+
         
         
 
@@ -110,6 +138,7 @@ class Websocket_Page(QObject):
         self.main_win.setDisabled_tabs(True)
         self.ui.conect_websc.setChecked(False)
         self.ui.websck_status.hide()
+        Info_Notify("Disconnected", "Lost connection with websocket server", parent=self.main_win)
 
     @asyncSlot()
     async def connectWS(self):
@@ -123,6 +152,7 @@ class Websocket_Page(QObject):
             await asyncio.sleep(1)
             
             if self.websocket_client.isConnected():
+                Success_Notify("Success connected", "Successfully connected to websocket server", f"Connect on {self.websocket_client.ip()}:{self.websocket_client.port()}", parent=self.main_win, show_time=120)
                 await self.load_logs()
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connected.png"))
                 self.ui.label_6.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">Connected to:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.ip()}</span></p></body></html>")
@@ -134,6 +164,7 @@ class Websocket_Page(QObject):
                 self.main_win.setDisabled_tabs(False)
                 self.ui.websck_status.show()
             else:
+                Error_Notify("Сonnection failed", "Cannot connect to websocket server", f"try was on {self.websocket_client.ip()}:{self.websocket_client.port()}", parent=self.main_win)
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connectError.png"))
                 await asyncio.sleep(3)
                 self.ui.conect_websc.setText("Connect")

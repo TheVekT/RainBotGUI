@@ -94,17 +94,3 @@ class RainBot_Websocket(QObject):
         await self.send_command("@get_logs")
         logs = await self.logs_queue.get()
         return logs
-
-    async def find_server(self, port=8765, subnet="192.168.0.", start_ip=1, end_ip=255):
-        """Finds a WebSocket server in the local network."""
-        for i in range(start_ip, end_ip + 1):
-            ip = f"{subnet}{i}"
-            try:
-                uri = f"ws://{ip}:{port}"
-                print(f"Checking {uri}...")
-                async with websockets.connect(uri, timeout=1):
-                    print(f"Server found at {ip}")
-                    return uri
-            except (websockets.exceptions.InvalidURI, websockets.exceptions.ConnectionClosed, OSError):
-                continue
-        return None

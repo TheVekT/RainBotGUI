@@ -5,18 +5,17 @@ from ctypes import windll, wintypes
 from qasync import QEventLoop, asyncSlot
 
 from PyQt6 import QtGui, QtCore
-from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, pyqtSlot, pyqtSignal, QEvent
-from PyQt6.QtWidgets import QMainWindow,QPushButton, QWidget,QMessageBox, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
-from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath,  QTextDocument, QTextCursor
+from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, pyqtSlot
+from PyQt6.QtWidgets import QMainWindow,QPushButton, QWidget, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
+from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath
 
 from rainbotgui.gui.resources import resources
 from rainbotgui.utils.win import *
 from rainbotgui.utils.btns_style import get_btns_style_settings
-from rainbotgui.gui.widgets import Find_Widget
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
 from rainbotgui.gui.pages_func import Terminal_Page, Websocket_Page
-
+from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify
 
 class MainWindow(QMainWindow):
     
