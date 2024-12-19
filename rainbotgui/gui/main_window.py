@@ -6,7 +6,7 @@ from qasync import QEventLoop, asyncSlot
 
 from PyQt6 import QtGui, QtCore
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, pyqtSlot
-from PyQt6.QtWidgets import QMainWindow,QPushButton, QWidget, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
+from PyQt6.QtWidgets import QMainWindow,QPushButton, QWidget, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QVBoxLayout
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath
 
 from rainbotgui.gui.resources import resources
@@ -29,13 +29,14 @@ class MainWindow(QMainWindow):
         # #
         # # atributes
         # #
+        self.notify_queue = []
         self.left_menu_minimized = False
         self.animations = []
         self.is_maximized = False
         self.window_start_position = None
         self.minimized_buttons_texts_dict = {}
         self.saved_style = None
-        
+
         
         
         # # 
@@ -47,21 +48,21 @@ class MainWindow(QMainWindow):
         
         self.switch_tab(3, 500)
         self.buttons_hover_init()
+        
         self.window_resizing_frame()
         self.websocket_client = RainBot_Websocket()
 
         # # 
         # # widgets init
         # #
-        
 
+        
         self.terminal_page = Terminal_Page(self.websocket_client, self.ui, self)
         self.websocket_page = Websocket_Page(self.websocket_client, self.ui, self)
         self.setMouseTracking(True)
         self.ui.centralwidget.setMouseTracking(True)
 
         self.set_build_version()
-        
 
         self.setDisabled_tabs(True)
 
@@ -93,6 +94,7 @@ class MainWindow(QMainWindow):
         # # websocket
         # # 
         
+        self.ui.menuButton.click()
         pass
 
 
@@ -347,7 +349,6 @@ class MainWindow(QMainWindow):
         else:
             # Убираем эффект свечения
             frame.setGraphicsEffect(None)
-
 
 
 

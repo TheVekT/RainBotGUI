@@ -3,7 +3,7 @@ from PyQt6.QtCore import QObject, pyqtSlot, pyqtSignal, QPropertyAnimation, QEas
 from PyQt6.QtGui import QTextDocument, QTextCursor, QKeyEvent
 from PyQt6.QtWidgets import QTextBrowser, QLayout
 from rainbotgui.gui.resources import resources
-
+from qasync import QEventLoop, asyncSlot
 
 class Find_Widget(QObject):
     """
@@ -173,10 +173,11 @@ class Find_Widget(QObject):
 
 
 
-class Notify_widget(QtCore.QObject):
+class Notify_widget(QtWidgets.QWidget):
     def __init__(self, parent=None, show_time: int = 5):
         super().__init__(parent)
         self.show_time = show_time
+        self.main_win = parent
         self.Notification = QtWidgets.QWidget(parent=parent)
         self.Notification.setGeometry(QtCore.QRect(20, 20, 400, 130))
         self.Notification.setMinimumSize(QtCore.QSize(350, 130))
@@ -289,37 +290,76 @@ class Notify_widget(QtCore.QObject):
         self.timeline.setObjectName("timeline")
         self.verticalLayout_2.addWidget(self.timeline)
         self.animations = []
-        self.retranslateUi()
-    
         self.close_btn.clicked.connect(self.close)
 
         if parent is not None:
             parent.installEventFilter(self)
         
-        self.Notification.show()
-        self.update_position()
-        self.close_timer(show_time=show_time)
         
-    def close_timer(self, show_time):
-        animation1 = QPropertyAnimation(self.timeline, b"value")
-        animation1.setDuration(show_time * 1000 - 200)
-        animation1.setStartValue(100)
-        animation1.setEndValue(0)
-        animation1.setEasingCurve(QEasingCurve.Type.Linear)
-        animation1.finished.connect(self.close)
         
-        self.animations.append(animation1)
-        animation1.start()
+        self.main_win.notify_queue.append(self)
+        if len(self.main_win.notify_queue) == 1:
+            self.update_position()
+            self.show_notification()
+            self.close_timer(show_time=self.show_time)
+        else:
+            self.update_position()
+            self.hide()
+            self.Notification.hide()
 
-    def retranslateUi(self):
-        self.notify_title.setText("Success")
-        self.notify_text1.setText("This is small description of notify widget to test layouts")
+    def show_notification(self):
+        self.Notification.show()
+        self.show()
+        animation = QPropertyAnimation(self.Notification, b"geometry")
+        animation.setDuration(100)
+        animation.setEasingCurve(QEasingCurve.Type.Linear)
+        animation.setStartValue(QtCore.QRect(self.Notification.x() + self.Notification.width(), self.Notification.y(), 0, self.Notification.height()))
+        animation.setEndValue(self.Notification.geometry())
+        self.Notification.setMinimumWidth(0)
+        self.notify_text1.setWordWrap(False)
+        self.animations.append(animation)
+        def _show():
+            self.Notification.setMinimumWidth(350) 
+            self.notify_text1.setWordWrap(True)
+        animation.finished.connect(_show)
+        animation.start()
+
+
+    def close_timer(self, show_time):
+        if show_time == 0:
+            return
+
+        self.timer = QPropertyAnimation(self.timeline, b"value")
+        self.timer.setDuration(show_time * 1000)
+        self.timer.setStartValue(100)
+        self.timer.setEndValue(0)
+        self.timer.setEasingCurve(QEasingCurve.Type.Linear)
+        self.timer.finished.connect(self.close)
+
+        self.animations.append(self.timer)
+        self.timer.start()
+
 
     def close(self):
         def _close():
+            # Удаляем текущее уведомление из очереди
+            if self in self.main_win.notify_queue:
+                self.main_win.notify_queue.remove(self)
+
+            # Показываем следующее уведомление, если оно есть
+            if self.main_win.notify_queue:
+                next_notification = self.main_win.notify_queue[0]
+                next_notification.show_notification()
+                next_notification.close_timer(show_time=next_notification.show_time)
+
+            # Удаляем текущее уведомление из интерфейса
             self.Notification.close()
             self.Notification.deleteLater()
             self.deleteLater()
+            
+            
+
+
         animation2 = QPropertyAnimation(self.Notification, b"geometry")
         animation2.setDuration(120)
         animation2.setEasingCurve(QEasingCurve.Type.Linear)
@@ -345,7 +385,6 @@ class Notify_widget(QtCore.QObject):
     def set_notify_theme_color(self, color):
         self.timeline.setStyleSheet("QProgressBar {\n"
                                     "    background: #000000;     \n"
-                                    "    text-align: center;      \n"
                                     "    color: transparent;       \n"
                                     "    border-radius: 0px;\n"
                                     "    border-bottom-right-radius: 3px;\n"
@@ -364,12 +403,11 @@ class Notify_widget(QtCore.QObject):
                                         "padding-right: 10px;")
 
     def update_position(self):
-        if self.parent():
-            parent_w = self.parent().width()
-            parent_h = self.parent().height()
-            w = self.Notification.width()
-            h = self.Notification.height()
-            self.Notification.move(parent_w - w - 10, parent_h - h - 10)
+        parent_w = self.parent().width()
+        parent_h = self.parent().height()
+        w = self.Notification.width()
+        h = self.Notification.height()
+        self.Notification.move(parent_w - w - 10, parent_h - h - 10)
 
     def eventFilter(self, watched, event):
         if watched == self.parent() and event.type() == QtCore.QEvent.Type.Resize:
