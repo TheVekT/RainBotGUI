@@ -4,6 +4,7 @@ from PyQt6.QtGui import QTextDocument, QTextCursor, QKeyEvent
 from PyQt6.QtWidgets import QTextBrowser, QLayout
 from rainbotgui.gui.resources import resources
 from qasync import QEventLoop, asyncSlot
+import asyncio
 
 class Find_Widget(QObject):
     """
@@ -448,3 +449,54 @@ class Error_Notify(Notify_widget):
         self.set_notify_title(title)
         self.notify_text1.setText(text1)
         self.notify_text2.setText(text2)
+
+
+
+
+
+
+
+
+
+
+class logfile_widget(QtWidgets.QWidget):
+    def __init__(self, log_filename: str ,log_date: str, log_folder: str,  parent, websocket_client, ui, layout):
+        super().__init__(parent)
+        self.ui = ui
+        self.websocket_client = websocket_client
+        self.log_filename = log_filename
+        self.log_date = log_date
+        self.log_folder = log_folder
+        self.Parent = parent
+        layout.addWidget(self)
+        self.log_btn = QtWidgets.QPushButton(log_date, parent=self)
+        self.log_btn.setMinimumSize(QtCore.QSize(200, 20))
+        self.log_btn.setMaximumSize(QtCore.QSize(200, 20))
+        self.log_btn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.log_btn.setStyleSheet("QPushButton{\n"
+                              "    background-color: rgba(0, 0, 0, 0);\n"
+                              "    border-radius: 0px;\n"
+                              "    color: white;\n"
+                              "    font-size: 10px;\n"
+                              "    border: none;\n"
+                              "}\n"
+                              "QPushButton:hover{\n"
+                              "    background-color: #FFDAB9;\n"
+                              "    color: black;\n"
+                              "}\n"
+                              "QPushButton:checked{\n"
+                              "    background-color: #FFDAB9;\n"
+                              "    color: black;\n"
+                              "}\n")
+        self.log_btn.setCheckable(True)
+        self.log_btn.clicked.connect(self.get_log_content)
+        self.log_btn.setObjectName("log_btn")
+        self.show()
+        
+    @asyncSlot()
+    async def get_log_content(self):
+        content = await self.websocket_client.get_log_file_content(self.log_folder, self.log_filename)
+        self.ui.logBrowser.clear()
+        self.ui.logBrowser.append(content)
+
+        

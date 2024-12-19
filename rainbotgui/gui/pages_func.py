@@ -1,12 +1,11 @@
 import asyncio
 from qasync import QEventLoop, asyncSlot
 from PyQt6.QtCore import Qt, QEvent, QObject
-from PyQt6 import QtGui
+from PyQt6 import QtGui, QtWidgets
 from rainbotgui.gui.resources import resources
-from rainbotgui.gui.widgets import Find_Widget
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
-from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify
+from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify, logfile_widget, Find_Widget
 
 class Terminal_Page(QObject):
     def __init__(self, wbsocet_obj: RainBot_Websocket, ui: Ui_MainWindow, main_win):
@@ -120,7 +119,6 @@ class Websocket_Page(QObject):
         self.ui.label_6.setText("")
         self.ui.label_7.setText("")
         self.ui.wbsocket_btn.setChecked(True)
-        self.ui.websck_status.hide()
         self.ui.conect_websc.clicked.connect(self.connectWS)
         self.websocket_client.connection_closed.connect(self.WS_on_diconnect)
 
@@ -140,7 +138,6 @@ class Websocket_Page(QObject):
         self.ui.label_7.setText("")
         self.main_win.setDisabled_tabs(True)
         self.ui.conect_websc.setChecked(False)
-        self.ui.websck_status.hide()
         Info_Notify("Disconnected", "Lost connection with websocket server", parent=self.main_win)
 
     @asyncSlot()
@@ -165,7 +162,6 @@ class Websocket_Page(QObject):
                 self.ui.conect_websc.setText("Connected")
                 self.ui.conect_websc.setDisabled(False)
                 self.main_win.setDisabled_tabs(False)
-                self.ui.websck_status.show()
             else:
                 Error_Notify("Сonnection failed", "Cannot connect to websocket server", f"try was on {self.websocket_client.ip()}:{self.websocket_client.port()}", parent=self.main_win)
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connectError.png"))
@@ -185,4 +181,57 @@ class Websocket_Page(QObject):
             self.ui.label_7.setText("")
             self.main_win.setDisabled_tabs(True)
 
+
+
+
+
+
+
+
+
+class logs_Page(QObject):
+    def __init__(self, wbsocet_obj: RainBot_Websocket, ui: Ui_MainWindow, main_win):
+        super().__init__()
+        self.ui = ui
+        self.main_win = main_win
+        self.websocket_client = wbsocet_obj
+        self.ui.logBrowser.setFocus()
+        self.find_in_logfile = Find_Widget(self.ui.logs_frame2, self.ui.horizontalLayout_14, 0, self.ui.logBrowser)
+        self.find_in_logfile.find_label_2.show()
+        self.find_in_logfile.find_label_2.setStyleSheet("background-color: rgba(10, 10, 10, 255)")
+        self.websocket_client.connection_opened.connect(self.get_acrchived_logs)
+        self.ui.logs_level_chooser.currentIndexChanged.connect(self.create_logfile_widgets)
+        self.ui.logBrowser.setFontPointSize(11)
+        self.ui.logBrowser.setFontFamily("JetBrains Mono,Helvetica")
+        self.scrollButtons = QtWidgets.QButtonGroup(self.ui.scrollAreaWidgetContents_2)
+        
+        
+    def create_logfile_widgets(self):
+        self.ui.logBrowser.clear()
+        log_level = self.ui.logs_level_chooser.currentText()
+        for el in self.ui.scrollAreaWidgetContents_2.children():
+            if isinstance(el, logfile_widget):
+                el.deleteLater()
+        if log_level == "Select log level" or log_level == "":
+            return
+        for log in self.avaliable_logs['data'][log_level][::-1]:
+            log_widget = logfile_widget(log['filename'], log['date'], log['folder'], 
+                                        parent=self.ui.scrollAreaWidgetContents_2, 
+                                        websocket_client=self.websocket_client, 
+                                        ui=self.ui, 
+                                        layout=self.ui.verticalLayout_17)
+            self.scrollButtons.addButton(log_widget.log_btn)
+
+        
+    @asyncSlot()
+    async def get_acrchived_logs(self):
+        await asyncio.sleep(1)
+        self.avaliable_logs = await self.websocket_client.get_archived_logs(7)
+        self.ui.logs_level_chooser.removeItem(0)
+        self.ui.logs_level_chooser.addItem("Select log level")
+        for level in self.avaliable_logs['data']:
+            self.ui.logs_level_chooser.addItem(level)
+
+                
+            
             

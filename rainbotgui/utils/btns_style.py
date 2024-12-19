@@ -9,4 +9,5 @@ def get_btns_style_settings(ui):
         ui.com_help_btn: {"default": ":/MainIcons/icons/command_helpW.png", "hover": ":/MainIcons/icons/command_helpB.png", "checkable": False},
         ui.send_btn: {"default": ":/MainIcons/icons/sendW.png", "hover": ":/MainIcons/icons/sendB.png", "checkable": False},
         ui.server_btn: {"default": ":/MainIcons/icons/serverW.png", "hover": ":/MainIcons/icons/serverB.png", "checkable": True},
+        ui.download_log_btn: {"default": ":/MainIcons/icons/download_W.png", "hover": ":/MainIcons/icons/download_B.png", "checkable": False},
     }

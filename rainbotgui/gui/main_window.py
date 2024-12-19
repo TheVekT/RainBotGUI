@@ -14,7 +14,7 @@ from rainbotgui.utils.win import *
 from rainbotgui.utils.btns_style import get_btns_style_settings
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
-from rainbotgui.gui.pages_func import Terminal_Page, Websocket_Page
+from rainbotgui.gui.pages_func import Terminal_Page, Websocket_Page, logs_Page
 from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify
 
 class MainWindow(QMainWindow):
@@ -55,15 +55,15 @@ class MainWindow(QMainWindow):
         # # 
         # # widgets init
         # #
-
         
         self.terminal_page = Terminal_Page(self.websocket_client, self.ui, self)
         self.websocket_page = Websocket_Page(self.websocket_client, self.ui, self)
+        self.logs_page = logs_Page(self.websocket_client, self.ui, self)
         self.setMouseTracking(True)
         self.ui.centralwidget.setMouseTracking(True)
 
         self.set_build_version()
-
+        
         self.setDisabled_tabs(True)
 
         # #
@@ -93,8 +93,9 @@ class MainWindow(QMainWindow):
         # #
         # # websocket
         # # 
-        
+
         self.ui.menuButton.click()
+        self.terminal_page.find_in_terminal.find_label_2.hide()
         pass
 
 
@@ -135,7 +136,7 @@ class MainWindow(QMainWindow):
 
         # Анимация fade in для каждого дочернего элемента
         for child in current_widget.findChildren(QWidget):
-            if child.objectName() != 'find_label_2':
+            if child.objectName() not in ('find_label_2'):
                 self.fade_in_animation(child, duration)
 
 
@@ -455,18 +456,18 @@ class MainWindow(QMainWindow):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        # Устанавливаем цвет фона окна
-        painter.setBrush(QColor(255, 255, 255))  # Белый фон, если необходимо
+
+        painter.setBrush(QColor(0, 0, 0))
         painter.setPen(QtCore.Qt.PenStyle.NoPen)
 
-        # Рисуем скругленный прямоугольник
+
         rect = self.rect()
         radius = 20
         path = QPainterPath()
         path.addRoundedRect(QRectF(rect), radius, radius)
         painter.drawPath(path)
 
-        # Если хотите рисовать что-то поверх скругленного прямоугольника, например, фон
+
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationOver)
         painter.setBrush(self.palette().window())
         painter.drawPath(path)

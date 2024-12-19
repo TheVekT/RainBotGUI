@@ -6,13 +6,19 @@ from PyQt6.QtCore import QObject, pyqtSignal
 
 class RainBot_Websocket(QObject):
     new_log_signal = pyqtSignal(str)
+    connection_opened = pyqtSignal()
     connection_closed = pyqtSignal()
 
     def __init__(self, uri=None):
         super().__init__()
         self.uri = uri
         self.websocket = None
+
         self.logs_queue = asyncio.Queue()
+   
+        self.archived_logs_queue = asyncio.Queue()
+
+        self.log_file_content_queue = asyncio.Queue()
 
     def ip(self):
         """Returns the IP address of the connected server."""
@@ -31,6 +37,7 @@ class RainBot_Websocket(QObject):
         try:
             self.websocket = await websockets.connect(self.uri)
             print(f"Connected to server: {self.uri}")
+            self.connection_opened.emit()
             # Send initial connection type message
             initial_message = {
                 "connection-type": connection_type
@@ -75,14 +82,36 @@ class RainBot_Websocket(QObject):
                 # Try to parse the message as JSON
                 try:
                     data = json.loads(message)
-                    if 'type' in data and data['type'] == 'logs':
-                        match data['type']:
-                            case 'logs':
-                                await self.logs_queue.put(data['message'])
-                            case 'new_log_message':
-                                self.new_log_signal.emit(data['message'])
+                    msg_type = data.get('type')
+
+                    if msg_type == 'logs':
+                        # История логов
+                        await self.logs_queue.put(data['message'])
+
+                    elif msg_type == 'new_log_message':
+                        # Новый лог-сообщение
+                        self.new_log_signal.emit(data['message'])
+
+                    elif msg_type == 'archived_logs':
+                        await self.archived_logs_queue.put(data)
+
+                    elif msg_type == 'log_file_content':
+                        # Содержимое конкретного лог-файла
+                        # data['content'] содержит текст файла
+                        await self.log_file_content_queue.put(data['content'])
+
+                    elif msg_type == 'error':
+                        # Сообщение об ошибке
+                        error_message = data.get('message', 'Unknown error')
+                        print(f"Server error: {error_message}")
+                        # Можно выбросить исключение или обработать иначе
+                        # Здесь для простоты - бросим исключение:
+                        raise Exception(f"Server error: {error_message}")
+
                     else:
+                        # Неизвестное или другое сообщение
                         print(f"Received other message: {data}")
+
                 except json.JSONDecodeError:
                     print(f"Error parsing message: {message}")
         except websockets.exceptions.ConnectionClosed:
@@ -96,3 +125,23 @@ class RainBot_Websocket(QObject):
         await self.send_command("@get_logs")
         logs = await self.logs_queue.get()
         return logs
+
+    async def get_archived_logs(self, days: int):
+        """
+        Запрашивает метаданные заархивированных логов за последние `days` дней.
+        Возвращает словарь с метаданными.
+        """
+        command = f"@get_archived_logs {days}"
+        await self.send_command(command)
+        archived_logs = await self.archived_logs_queue.get()
+        return archived_logs
+
+    async def get_log_file_content(self, folder: str, filename: str):
+        """
+        Запрашивает содержимое указанного лог-файла.
+        Возвращает содержимое файла (строка).
+        """
+        command = f"@get_log_file {folder} {filename}"
+        await self.send_command(command)
+        content = await self.log_file_content_queue.get()
+        return content
