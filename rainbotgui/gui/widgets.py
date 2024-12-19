@@ -104,6 +104,7 @@ class Find_Widget(QObject):
         self.downButton.clicked.connect(self.onDownClicked)
         self.find_label_2.hide()
         self.searchRequested.connect(self.search_in_terminal)
+        self.Find_line.returnPressed.connect(self.downButton.click)
     def retranslateUi(self):
         """
         Sets the text for the UI elements.
@@ -311,7 +312,7 @@ class Notify_widget(QtWidgets.QWidget):
         self.Notification.show()
         self.show()
         animation = QPropertyAnimation(self.Notification, b"geometry")
-        animation.setDuration(100)
+        animation.setDuration(120)
         animation.setEasingCurve(QEasingCurve.Type.Linear)
         animation.setStartValue(QtCore.QRect(self.Notification.x() + self.Notification.width(), self.Notification.y(), 0, self.Notification.height()))
         animation.setEndValue(self.Notification.geometry())

@@ -79,7 +79,7 @@ class Terminal_Page(QObject):
     @asyncSlot()
     async def sent_console_command(self):
         text = self.ui.LineSenDCommand.text()
-        if text != "":
+        if text != "" and text.startswith("/"):
             if text == "/disconnect":
                 await self.websocket_client.disconnect()
                 self.ui.textBrowser.append(text)
@@ -92,7 +92,10 @@ class Terminal_Page(QObject):
             self.update_unique_commands()
             self.command_index = len(self.unique_commands)  # Сбрасываем индекс на конец списка
             self.ui.LineSenDCommand.clear()
-
+        elif text != "" and not text.startswith("/"):
+            self.ui.textBrowser.append("[Terminal] Commands must start with '/'")
+            self.ui.LineSenDCommand.clear()
+            
     def handle_new_log_message(self, log_message):
         """Метод для обработки нового сообщения."""
         self.ui.textBrowser.append(log_message)
