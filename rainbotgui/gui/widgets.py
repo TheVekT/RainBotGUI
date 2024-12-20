@@ -469,15 +469,17 @@ class logfile_widget(QtWidgets.QWidget):
         self.log_folder = log_folder
         self.Parent = parent
         layout.addWidget(self)
+        self.setMinimumSize(QtCore.QSize(200, 25))
+        self.setMaximumSize(QtCore.QSize(200, 25))
         self.log_btn = QtWidgets.QPushButton(log_date, parent=self)
-        self.log_btn.setMinimumSize(QtCore.QSize(200, 20))
-        self.log_btn.setMaximumSize(QtCore.QSize(200, 20))
+        self.log_btn.setMinimumSize(QtCore.QSize(200, 25))
+        self.log_btn.setMaximumSize(QtCore.QSize(200, 25))
         self.log_btn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.log_btn.setStyleSheet("QPushButton{\n"
                               "    background-color: rgba(0, 0, 0, 0);\n"
                               "    border-radius: 0px;\n"
                               "    color: white;\n"
-                              "    font-size: 10px;\n"
+                              "    font-size: 11px;\n"
                               "    border: none;\n"
                               "}\n"
                               "QPushButton:hover{\n"
@@ -495,8 +497,10 @@ class logfile_widget(QtWidgets.QWidget):
         
     @asyncSlot()
     async def get_log_content(self):
-        content = await self.websocket_client.get_log_file_content(self.log_folder, self.log_filename)
-        self.ui.logBrowser.clear()
-        self.ui.logBrowser.append(content)
+        async def _get_log_content():
+            content = await self.websocket_client.get_log_file_content(self.log_folder, self.log_filename)
+            self.ui.logBrowser.clear()
+            self.ui.logBrowser.append(content)
+        asyncio.create_task(_get_log_content())
 
         

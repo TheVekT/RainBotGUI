@@ -35,7 +35,7 @@ class RainBot_Websocket(QObject):
         if uri:
             self.uri = uri
         try:
-            self.websocket = await websockets.connect(self.uri)
+            self.websocket = await websockets.connect(self.uri, max_size=16777216)
             print(f"Connected to server: {self.uri}")
             self.connection_opened.emit()
             # Send initial connection type message
@@ -144,4 +144,5 @@ class RainBot_Websocket(QObject):
         command = f"@get_log_file {folder} {filename}"
         await self.send_command(command)
         content = await self.log_file_content_queue.get()
+        print(f"Received log file content: {content}...")
         return content

@@ -195,16 +195,21 @@ class logs_Page(QObject):
         self.ui = ui
         self.main_win = main_win
         self.websocket_client = wbsocet_obj
-        self.ui.logBrowser.setFocus()
+        self.ui.verticalLayout_17.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.find_in_logfile = Find_Widget(self.ui.logs_frame2, self.ui.horizontalLayout_14, 0, self.ui.logBrowser)
-        self.find_in_logfile.find_label_2.show()
         self.find_in_logfile.find_label_2.setStyleSheet("background-color: rgba(10, 10, 10, 255)")
+        self.find_in_logfile.find_label_2.setMaximumSize(16777215, 40)
+        self.find_in_logfile.Find_line.setMinimumSize(0, 40)
+        self.find_in_logfile.Find_line.setMaximumSize(16777215, 40)
+        self.find_in_logfile.find_updown_btns_2.setMaximumSize(16777215, 40)
+        self.find_in_logfile.find_label_2.show()
+        
         self.websocket_client.connection_opened.connect(self.get_acrchived_logs)
         self.ui.logs_level_chooser.currentIndexChanged.connect(self.create_logfile_widgets)
         self.ui.logBrowser.setFontPointSize(11)
         self.ui.logBrowser.setFontFamily("JetBrains Mono,Helvetica")
         self.scrollButtons = QtWidgets.QButtonGroup(self.ui.scrollAreaWidgetContents_2)
-        
+        self.ui.download_log_btn.clicked.connect(self.save_logfile)
         
     def create_logfile_widgets(self):
         self.ui.logBrowser.clear()
@@ -216,7 +221,7 @@ class logs_Page(QObject):
             return
         for log in self.avaliable_logs['data'][log_level][::-1]:
             log_widget = logfile_widget(log['filename'], log['date'], log['folder'], 
-                                        parent=self.ui.scrollAreaWidgetContents_2, 
+                                        parent=None, 
                                         websocket_client=self.websocket_client, 
                                         ui=self.ui, 
                                         layout=self.ui.verticalLayout_17)
@@ -226,12 +231,35 @@ class logs_Page(QObject):
     @asyncSlot()
     async def get_acrchived_logs(self):
         await asyncio.sleep(1)
-        self.avaliable_logs = await self.websocket_client.get_archived_logs(7)
-        self.ui.logs_level_chooser.removeItem(0)
+        self.avaliable_logs = await self.websocket_client.get_archived_logs(14)
+        self.ui.logs_level_chooser.clear()
         self.ui.logs_level_chooser.addItem("Select log level")
         for level in self.avaliable_logs['data']:
             self.ui.logs_level_chooser.addItem(level)
+            
+    def save_logfile(self):
+        btn: logfile_widget = self.scrollButtons.checkedButton().parent()
+        logfilename = btn.log_filename
+        logtext = self.ui.logBrowser.toPlainText()
+        
+        if logtext.strip() == "":
+            return
+        file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self.main_win,
+            "Save Log File",
+            f"{logfilename[:23:]}.txt",
+            "Text Files (*.txt)"
+        )
 
-                
+        if not file_name:
+            return
+
+        try:
+            with open(file_name, "w", encoding="utf-8") as file:
+                file.write(logtext)
+            Success_Notify("Success save", f"Log saved successfully to {file_name}", parent=self.main_win)
+        except Exception as e:
+            Error_Notify("Error", "An error occurred while saving the file", parent=self.main_win)
+                    
             
             
