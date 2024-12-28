@@ -14,14 +14,15 @@ from rainbotgui.utils.win import *
 from rainbotgui.utils.btns_style import get_btns_style_settings
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
-from rainbotgui.gui.pages_func import Terminal_Page, Websocket_Page, logs_Page
+from rainbotgui.gui.pages_func import Terminal_Page, Websocket_Page, logs_Page, Settings_Page
 from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify
 
 class MainWindow(QMainWindow):
-    
+    websocket_setup = QtCore.pyqtSignal()
     
     def __init__(self):
         super(MainWindow, self).__init__()
+        
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -56,9 +57,8 @@ class MainWindow(QMainWindow):
         # # widgets init
         # #
         
-        self.terminal_page = Terminal_Page(self.websocket_client, self.ui, self)
-        self.websocket_page = Websocket_Page(self.websocket_client, self.ui, self)
-        self.logs_page = logs_Page(self.websocket_client, self.ui, self)
+
+        
         self.setMouseTracking(True)
         self.ui.centralwidget.setMouseTracking(True)
 
@@ -88,14 +88,14 @@ class MainWindow(QMainWindow):
         self.ui.wbsocket_btn.clicked.connect(lambda: self.switch_tab(3))
         self.ui.server_btn.clicked.connect(lambda: self.switch_tab(5))
 
-
+        
+        
+        self.setup_pages()
         
         # #
         # # websocket
         # # 
 
-        self.ui.menuButton.click()
-        self.terminal_page.find_in_terminal.find_label_2.hide()
         pass
 
 
@@ -109,8 +109,12 @@ class MainWindow(QMainWindow):
         ##
         ##  Gui functional
         ##
-
-
+    def setup_pages(self):
+        self.terminal_page = Terminal_Page(self.websocket_client, self.ui, self)
+        self.websocket_page = Websocket_Page(self.websocket_client, self.ui, self)
+        self.logs_page = logs_Page(self.websocket_client, self.ui, self)
+        self.settings_page = Settings_Page(self.websocket_client, self.ui, self)
+        
     def buttons_hover_init(self):
         self.BUTTON_STYLE_SETTINGS = get_btns_style_settings(self.ui)
         # Привязываем начальные иконки и события к кнопкам

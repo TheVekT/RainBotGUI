@@ -25,7 +25,6 @@
   <property name="font">
    <font>
     <family>JetBrains Mono,Helvetica</family>
-    <pointsize>11</pointsize>
    </font>
   </property>
   <property name="cursor">
@@ -1004,7 +1003,7 @@ QTabBar::tab {
 </string>
             </property>
             <property name="currentIndex">
-             <number>2</number>
+             <number>3</number>
             </property>
             <property name="usesScrollButtons">
              <bool>true</bool>

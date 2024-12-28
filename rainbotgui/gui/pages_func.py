@@ -1,4 +1,6 @@
 import asyncio
+import os
+import json
 from qasync import QEventLoop, asyncSlot
 from PyQt6.QtCore import Qt, QEvent, QObject
 from PyQt6 import QtGui, QtWidgets
@@ -13,6 +15,7 @@ class Terminal_Page(QObject):
         self.ui = ui
         self.used_commands = []
         self.unique_commands = []  # Список уникальных подряд команд для переключения
+        self.main_win = main_win
         self.command_index = -1  # Индекс текущей команды в unique_commands
         self.websocket_client = wbsocet_obj
         self.ui.textBrowser.setFontPointSize(11)
@@ -23,11 +26,30 @@ class Terminal_Page(QObject):
             pos=3,
             browser=self.ui.textBrowser
         )
+        self.main_win.websocket_setup.connect(self.set_tooltip)
         self.ui.LineSenDCommand.installEventFilter(self)
         self.ui.LineSenDCommand.returnPressed.connect(self.sent_console_command)
         self.ui.send_btn.clicked.connect(self.sent_console_command)
         self.ui.button_find_in_console.clicked.connect(self.toggle_find)
         self.websocket_client.new_log_signal.connect(self.handle_new_log_message)
+    
+    @asyncSlot()
+    async def set_tooltip(self):
+        await asyncio.sleep(0.1)
+        text = "Registered commands:"
+        for command in self.websocket_client.registered_functions['registered_functions']:
+            text += f"\n  /{command}"
+        self.ui.com_help_btn.setToolTip(text)
+        current_style = self.ui.com_help_btn.styleSheet() 
+        new_style = f"""
+        {current_style}
+        QToolTip {{
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid rgb(15,15,15);
+        }}
+        """
+        self.ui.com_help_btn.setStyleSheet(new_style)  # Устанавливаем новый стиль
 
     def toggle_find(self):
         if self.find_in_terminal.find_label_2.isHidden():
@@ -147,13 +169,16 @@ class Websocket_Page(QObject):
         if not self.websocket_client.isConnected():
             self.ui.conect_websc.setText("Connecting...")
             self.ui.conect_websc.setDisabled(True)
-            await self.websocket_client.connect(uri='ws://192.168.0.106:8765')
+            uri = self.main_win.settings_page.return_settings()['websocket_uri']
+            await self.websocket_client.connect(uri=uri)
             self.ui.textBrowser.clear()
             await asyncio.sleep(1)
             
             if self.websocket_client.isConnected():
                 Success_Notify("Success connected", "Successfully connected to websocket server", f"Connect on {self.websocket_client.ip()}:{self.websocket_client.port()}", parent=self.main_win)
                 await self.load_logs()
+                await self.websocket_client.set_registered_functions()
+                self.main_win.websocket_setup.emit()
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connected.png"))
                 self.ui.label_6.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">Connected to:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.ip()}</span></p></body></html>")
                 self.ui.label_7.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">on port:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.port()}</span></p></body></html>")
@@ -238,12 +263,13 @@ class logs_Page(QObject):
             self.ui.logs_level_chooser.addItem(level)
             
     def save_logfile(self):
-        btn: logfile_widget = self.scrollButtons.checkedButton().parent()
-        logfilename = btn.log_filename
+
         logtext = self.ui.logBrowser.toPlainText()
         
         if logtext.strip() == "":
             return
+        btn: logfile_widget = self.scrollButtons.checkedButton().parent()
+        logfilename = btn.log_filename
         file_name, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.main_win,
             "Save Log File",
@@ -262,4 +288,46 @@ class logs_Page(QObject):
             Error_Notify("Error", "An error occurred while saving the file", parent=self.main_win)
                     
             
-            
+        
+        
+        
+class Settings_Page(QObject):
+    def __init__(self, wbsocet_obj: RainBot_Websocket, ui: Ui_MainWindow, main_win):
+        super().__init__()
+        self.ui = ui
+        self.main_win = main_win
+        self.websocket_client = wbsocet_obj
+
+        self.settings_path = os.path.join(os.getcwd(), "settings.json")
+        self.default_settings = {
+            "websocket_uri": "ws://192.168.0.106:8765",
+            "autoconnect": False,
+            "autoswipe_left_menu": False
+        }
+        self.create_settings_file()
+        self.load_settings()
+
+    def create_settings_file(self):
+        if not os.path.exists(self.settings_path):
+            try:
+                with open(self.settings_path, "w", encoding="utf-8") as file:
+                    json.dump(self.default_settings, file, indent=4)
+                print(f"Settings file created: {self.settings_path}")
+            except Exception as e:
+                print(f"Error with creating settings file: {e}")
+
+    def return_settings(self):
+        try:
+            with open(self.settings_path, "r", encoding="utf-8") as file:
+                settings = json.load(file)
+            return settings
+        except Exception as e:
+            print(f"Error loading settings: {e}")
+            return self.default_settings
+        
+    def load_settings(self):
+        settings = self.return_settings()
+        self.ui.conect_websc.click() if settings['autoconnect'] else None
+        self.ui.menuButton.click() if settings['autoswipe_left_menu'] else None
+
+        

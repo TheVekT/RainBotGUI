@@ -17,7 +17,6 @@ class Ui_MainWindow(object):
         MainWindow.setBaseSize(QtCore.QSize(1280, 720))
         font = QtGui.QFont()
         font.setFamily("JetBrains Mono,Helvetica")
-        font.setPointSize(11)
         MainWindow.setFont(font)
         MainWindow.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.ArrowCursor))
         icon = QtGui.QIcon()
@@ -995,7 +994,6 @@ class Ui_MainWindow(object):
         self.logs_level_chooser.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.logs_level_chooser.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.logs_level_chooser.setLayoutDirection(QtCore.Qt.LayoutDirection.LeftToRight)
-        self.logs_level_chooser.setDuplicatesEnabled(False)
         self.logs_level_chooser.setStyleSheet("QComboBox {\n"
 "    background-color: #090909;  \n"
 "    color: white;           \n"
@@ -1051,7 +1049,6 @@ class Ui_MainWindow(object):
         self.scrollArea_2.setWidgetResizable(True)
         self.scrollArea_2.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
         self.scrollArea_2.setObjectName("scrollArea_2")
-        self.scrollArea_2.setStyleSheet("")
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
         self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 200, 550))
         self.scrollAreaWidgetContents_2.setMinimumSize(QtCore.QSize(200, 0))
@@ -1184,7 +1181,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.CentralTabs.setCurrentIndex(2)
+        self.CentralTabs.setCurrentIndex(3)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

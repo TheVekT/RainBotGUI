@@ -503,4 +503,5 @@ class logfile_widget(QtWidgets.QWidget):
             self.ui.logBrowser.append(content)
         asyncio.create_task(_get_log_content())
 
-        
+
+

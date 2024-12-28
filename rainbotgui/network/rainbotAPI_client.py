@@ -19,6 +19,8 @@ class RainBot_Websocket(QObject):
         self.archived_logs_queue = asyncio.Queue()
 
         self.log_file_content_queue = asyncio.Queue()
+        
+        self.registered_functions: dict = {}
 
     def ip(self):
         """Returns the IP address of the connected server."""
@@ -71,8 +73,9 @@ class RainBot_Websocket(QObject):
             print("No active connection to close.")
 
     def isConnected(self):
+        from websockets.protocol import State
         """Checks if the client is connected to the server."""
-        return self.websocket is not None and self.websocket.open
+        return self.websocket is not None and self.websocket.state == State.OPEN
 
     async def receive_messages(self):
         """Background task to receive messages from the server."""
@@ -83,30 +86,33 @@ class RainBot_Websocket(QObject):
                 try:
                     data = json.loads(message)
                     msg_type = data.get('type')
+                    if msg_type:
+                        match msg_type:
+                            case 'logs':
+                                await self.logs_queue.put(data['message'])
 
-                    if msg_type == 'logs':
-                        # История логов
-                        await self.logs_queue.put(data['message'])
+                            case'new_log_message':
+                                # Новый лог-сообщение
+                                self.new_log_signal.emit(data['message'])
 
-                    elif msg_type == 'new_log_message':
-                        # Новый лог-сообщение
-                        self.new_log_signal.emit(data['message'])
+                            case 'archived_logs':
+                                await self.archived_logs_queue.put(data)
 
-                    elif msg_type == 'archived_logs':
-                        await self.archived_logs_queue.put(data)
+                            case 'log_file_content':
+                                # Содержимое конкретного лог-файла
+                                # data['content'] содержит текст файла
+                                await self.log_file_content_queue.put(data['content'])
+                                
+                            case 'registered_functions':
+                                self.registered_functions['registered_functions'] = data['data']
 
-                    elif msg_type == 'log_file_content':
-                        # Содержимое конкретного лог-файла
-                        # data['content'] содержит текст файла
-                        await self.log_file_content_queue.put(data['content'])
-
-                    elif msg_type == 'error':
-                        # Сообщение об ошибке
-                        error_message = data.get('message', 'Unknown error')
-                        print(f"Server error: {error_message}")
-                        # Можно выбросить исключение или обработать иначе
-                        # Здесь для простоты - бросим исключение:
-                        raise Exception(f"Server error: {error_message}")
+                            case 'error':
+                                # Сообщение об ошибке
+                                error_message = data.get('message', 'Unknown error')
+                                print(f"Server error: {error_message}")
+                                # Можно выбросить исключение или обработать иначе
+                                # Здесь для простоты - бросим исключение:
+                                raise Exception(f"Server error: {error_message}")
 
                     else:
                         # Неизвестное или другое сообщение
@@ -119,6 +125,9 @@ class RainBot_Websocket(QObject):
             self.connection_closed.emit()
         except Exception as e:
             print(f"Error receiving messages: {e}")
+
+    async def set_registered_functions(self):
+        await self.send_command("@registered_functions")
 
     async def get_logs(self):
         """Requests logs from the server."""
