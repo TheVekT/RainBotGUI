@@ -33,29 +33,29 @@ class RainBot_Websocket(QObject):
         return parsed_url.port
 
     async def connect(self, uri=None, connection_type="gui_client"):
-        """Connects to the WebSocket server and sends the connection type."""
         if uri:
             self.uri = uri
         try:
             self.websocket = await websockets.connect(self.uri, max_size=16777216)
             print(f"Connected to server: {self.uri}")
             self.connection_opened.emit()
-            # Send initial connection type message
+            # Отправляем начальное сообщение в JSON-формате
             initial_message = {
-                "connection-type": connection_type
+                "request": "INIT_CONNECTION",
+                "arguments": {
+                    "connection_type": connection_type
+                }
             }
             await self.websocket.send(json.dumps(initial_message))
-            # Start background task to receive messages
             asyncio.create_task(self.receive_messages())
         except Exception as e:
             print(f"Connection error: {e}")
 
-    async def send_command(self, command):
-        """Sends a command to the server."""
+    async def send_command(self, command_json: str):
         if self.websocket:
             try:
-                await self.websocket.send(command)
-                print(f"Sent message: {command}")
+                await self.websocket.send(command_json)
+                print(f"Sent message: {command_json}")
             except Exception as e:
                 print(f"Error sending message: {e}")
         else:
@@ -105,7 +105,11 @@ class RainBot_Websocket(QObject):
                                 
                             case 'registered_functions':
                                 self.registered_functions['registered_functions'] = data['data']
-
+                            case 'response':
+                                # Ответ на команду
+                                # Здесь можно обработать ответ, если нужно
+                                response = data.get('message', 'No message')
+                                print(f"Response: {response}")
                             case 'error':
                                 # Сообщение об ошибке
                                 error_message = data.get('message', 'Unknown error')
@@ -125,33 +129,35 @@ class RainBot_Websocket(QObject):
             self.connection_closed.emit()
         except Exception as e:
             print(f"Error receiving messages: {e}")
-
+    async def slash_command(self, command: str):
+        payload = {"request": "SLASH_COMMAND", "arguments": {"command": command}}
+        await self.send_command(json.dumps(payload))
+    
     async def set_registered_functions(self):
-        await self.send_command("@registered_functions")
+        payload = {"request": "REGISTERED_FUNCTIONS", "arguments": {}}
+        await self.send_command(json.dumps(payload))
 
     async def get_logs(self):
-        """Requests logs from the server."""
-        await self.send_command("@get_logs")
+        payload = {"request": "GET_LOGS", "arguments": {}}
+        await self.send_command(json.dumps(payload))
         logs = await self.logs_queue.get()
         return logs
 
     async def get_archived_logs(self, days: int):
-        """
-        Запрашивает метаданные заархивированных логов за последние `days` дней.
-        Возвращает словарь с метаданными.
-        """
-        command = f"@get_archived_logs {days}"
-        await self.send_command(command)
+        payload = {
+            "request": "GET_ARCHIVED_LOGS",
+            "arguments": {"days": days}
+        }
+        await self.send_command(json.dumps(payload))
         archived_logs = await self.archived_logs_queue.get()
         return archived_logs
 
     async def get_log_file_content(self, folder: str, filename: str):
-        """
-        Запрашивает содержимое указанного лог-файла.
-        Возвращает содержимое файла (строка).
-        """
-        command = f"@get_log_file {folder} {filename}"
-        await self.send_command(command)
+        payload = {
+            "request": "GET_LOG_FILE",
+            "arguments": {"folder": folder, "filename": filename}
+        }
+        await self.send_command(json.dumps(payload))
         content = await self.log_file_content_queue.get()
-        print(f"Received log file content: {content}...")
+        print(f"Received log file content: {content[:50]}...")
         return content

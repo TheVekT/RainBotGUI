@@ -37,7 +37,7 @@ class Terminal_Page(QObject):
     async def set_tooltip(self):
         await asyncio.sleep(0.1)
         text = "Registered commands:"
-        for command in self.websocket_client.registered_functions['registered_functions']:
+        for command in self.websocket_client.registered_functions.get('registered_functions'):
             text += f"\n  /{command}"
         self.ui.com_help_btn.setToolTip(text)
         current_style = self.ui.com_help_btn.styleSheet() 
@@ -107,7 +107,7 @@ class Terminal_Page(QObject):
                 self.ui.LineSenDCommand.clear()
                 return
 
-            await self.websocket_client.send_command(text)
+            await self.websocket_client.slash_command(text)
             self.ui.textBrowser.append(f'>>> {text}')
             self.used_commands.append(text)
             self.update_unique_commands()

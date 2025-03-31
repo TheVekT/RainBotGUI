@@ -466,7 +466,7 @@ class MainWindow(QMainWindow):
 
 
         rect = self.rect()
-        radius = 20
+        radius = 10
         path = QPainterPath()
         path.addRoundedRect(QRectF(rect), radius, radius)
         painter.drawPath(path)
