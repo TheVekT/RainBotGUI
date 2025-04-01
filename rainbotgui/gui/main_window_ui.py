@@ -7,7 +7,7 @@
 
 
 from PyQt6 import QtCore, QtGui, QtWidgets
-
+from rainbotgui.gui.resources import resources
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -27,11 +27,11 @@ class Ui_MainWindow(object):
 "    font-family: \"JetBrains Mono\", Helvetica;\n"
 "    border-radius: 8px;\n"
 "}")
-        MainWindow.setDockOptions(QtWidgets.QMainWindow.DockOption.AllowTabbedDocks|QtWidgets.QMainWindow.DockOption.AnimatedDocks)
         MainWindow.setUnifiedTitleAndToolBarOnMac(False)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setMinimumSize(QtCore.QSize(1000, 500))
         self.centralwidget.setBaseSize(QtCore.QSize(1280, 720))
+        self.centralwidget.setStyleSheet("color: white;")
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.centralwidget)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
@@ -488,7 +488,7 @@ class Ui_MainWindow(object):
         self.textBrowser = QtWidgets.QTextBrowser(parent=self.console_layout_2)
         font = QtGui.QFont()
         font.setFamily("JetBrains Mono,Helvetica")
-        font.setPointSize(11)
+        font.setPointSize(-1)
         self.textBrowser.setFont(font)
         self.textBrowser.setStyleSheet("QTextBrowser{\n"
 "    selection-background-color:  #FFDAB9;\n"
@@ -581,7 +581,7 @@ class Ui_MainWindow(object):
         self.LineSenDCommand.setMaximumSize(QtCore.QSize(16777215, 25))
         font = QtGui.QFont()
         font.setFamily("JetBrains Mono,Helvetica")
-        font.setPointSize(11)
+        font.setPointSize(-1)
         self.LineSenDCommand.setFont(font)
         self.LineSenDCommand.setStyleSheet("\n"
 "QLineEdit {\n"
@@ -778,7 +778,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 200, 69))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 200, 429))
         self.scrollAreaWidgetContents.setMaximumSize(QtCore.QSize(200, 16777215))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_10 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
@@ -818,7 +818,7 @@ class Ui_MainWindow(object):
         self.button_term_shlepki.setObjectName("button_term_shlepki")
         self.verticalLayout_10.addWidget(self.button_term_shlepki, 0, QtCore.Qt.AlignmentFlag.AlignTop)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
-        self.verticalLayout_9.addWidget(self.scrollArea, 0, QtCore.Qt.AlignmentFlag.AlignTop)
+        self.verticalLayout_9.addWidget(self.scrollArea)
         self.verticalLayout_8.addWidget(self.fastcoms)
         self.horizontalLayout_8.addWidget(self.lay8)
         self.verticalLayout_5.addWidget(self.layoutHZ)
@@ -833,10 +833,290 @@ class Ui_MainWindow(object):
         self.CentralTabs.addTab(self.terminal_tab, "")
         self.stats_tab = QtWidgets.QWidget()
         self.stats_tab.setObjectName("stats_tab")
-        self.label_2 = QtWidgets.QLabel(parent=self.stats_tab)
-        self.label_2.setGeometry(QtCore.QRect(90, 90, 51, 41))
-        self.label_2.setStyleSheet("color: white;")
-        self.label_2.setObjectName("label_2")
+        self.horizontalLayout_17 = QtWidgets.QHBoxLayout(self.stats_tab)
+        self.horizontalLayout_17.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_17.setSpacing(0)
+        self.horizontalLayout_17.setObjectName("horizontalLayout_17")
+        self.frame_8 = QtWidgets.QFrame(parent=self.stats_tab)
+        self.frame_8.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.frame_8.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.frame_8.setObjectName("frame_8")
+        self.horizontalLayout_18 = QtWidgets.QHBoxLayout(self.frame_8)
+        self.horizontalLayout_18.setContentsMargins(5, 0, 0, 0)
+        self.horizontalLayout_18.setSpacing(5)
+        self.horizontalLayout_18.setObjectName("horizontalLayout_18")
+        self.tabWidget = QtWidgets.QTabWidget(parent=self.frame_8)
+        self.tabWidget.setObjectName("tabWidget")
+        self.main_stats_tab = QtWidgets.QWidget()
+        self.main_stats_tab.setObjectName("main_stats_tab")
+        self.horizontalLayout_23 = QtWidgets.QHBoxLayout(self.main_stats_tab)
+        self.horizontalLayout_23.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_23.setSpacing(0)
+        self.horizontalLayout_23.setObjectName("horizontalLayout_23")
+        self.tabWidget.addTab(self.main_stats_tab, "")
+        self.user_stats_tab = QtWidgets.QWidget()
+        self.user_stats_tab.setObjectName("user_stats_tab")
+        self.horizontalLayout_22 = QtWidgets.QHBoxLayout(self.user_stats_tab)
+        self.horizontalLayout_22.setContentsMargins(0, 0, 0, 5)
+        self.horizontalLayout_22.setSpacing(0)
+        self.horizontalLayout_22.setObjectName("horizontalLayout_22")
+        self.horizontalLayout_21 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_21.setObjectName("horizontalLayout_21")
+        self.verticalLayout_23 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_23.setObjectName("verticalLayout_23")
+        self.verticalLayout_21 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_21.setObjectName("verticalLayout_21")
+        self.stats_backbutton = QtWidgets.QPushButton(parent=self.user_stats_tab)
+        self.stats_backbutton.setMinimumSize(QtCore.QSize(100, 25))
+        self.stats_backbutton.setMaximumSize(QtCore.QSize(100, 25))
+        self.stats_backbutton.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.stats_backbutton.setStyleSheet("QPushButton{\n"
+"    border-radius: 5px;\n"
+"    background-color: rgb(10, 10, 10);\n"
+"    color: rgba(255, 255, 255, 200);\n"
+"    font-size: 13px;\n"
+"    border: none;\n"
+"}\n"
+"QPushButton:hover{\n"
+"    color: black;\n"
+"    background-color: #FFDAB9;\n"
+"}")
+        self.stats_backbutton.setObjectName("stats_backbutton")
+        self.verticalLayout_21.addWidget(self.stats_backbutton)
+        self.horizontalLayout_19 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_19.setSpacing(15)
+        self.horizontalLayout_19.setObjectName("horizontalLayout_19")
+        self.stats_user_icon = QtWidgets.QLabel(parent=self.user_stats_tab)
+        self.stats_user_icon.setMinimumSize(QtCore.QSize(100, 100))
+        self.stats_user_icon.setMaximumSize(QtCore.QSize(100, 100))
+        self.stats_user_icon.setText("")
+        self.stats_user_icon.setObjectName("stats_user_icon")
+        self.horizontalLayout_19.addWidget(self.stats_user_icon)
+        self.verticalLayout_20 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_20.setSpacing(5)
+        self.verticalLayout_20.setObjectName("verticalLayout_20")
+        self.stats_nick = QtWidgets.QLabel(parent=self.user_stats_tab)
+        self.stats_nick.setMinimumSize(QtCore.QSize(220, 35))
+        self.stats_nick.setMaximumSize(QtCore.QSize(220, 35))
+        self.stats_nick.setStyleSheet("Color: White;\n"
+"padding-left: 8px;\n"
+"font-size: 15px;\n"
+"")
+        self.stats_nick.setObjectName("stats_nick")
+        self.verticalLayout_20.addWidget(self.stats_nick)
+        self.stats_status = QtWidgets.QLabel(parent=self.user_stats_tab)
+        self.stats_status.setMinimumSize(QtCore.QSize(220, 35))
+        self.stats_status.setMaximumSize(QtCore.QSize(220, 35))
+        self.stats_status.setStyleSheet("Color: White;\n"
+"padding-left: 8px;\n"
+"font-size: 13px;\n"
+"")
+        self.stats_status.setObjectName("stats_status")
+        self.verticalLayout_20.addWidget(self.stats_status)
+        self.horizontalLayout_19.addLayout(self.verticalLayout_20)
+        self.verticalLayout_21.addLayout(self.horizontalLayout_19)
+        self.verticalLayout_23.addLayout(self.verticalLayout_21)
+        self.horizontalLayout_20 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_20.setObjectName("horizontalLayout_20")
+        self.stats_selectdate = QtWidgets.QCalendarWidget(parent=self.user_stats_tab)
+        self.stats_selectdate.setMinimumSize(QtCore.QSize(370, 220))
+        self.stats_selectdate.setMaximumSize(QtCore.QSize(370, 220))
+        font = QtGui.QFont()
+        font.setFamily("JetBrains Mono,Helvetica")
+        font.setKerning(True)
+        self.stats_selectdate.setFont(font)
+        self.stats_selectdate.setStyleSheet("QCalendarWidget{\n"
+"    background-color: rgb(6,6,6);\n"
+"}\n"
+"QCalendarWidget QAbstractItemView{\n"
+"    color: white;\n"
+"    background-color: rgb(6,6,6);\n"
+"    alternate-background-color: rgb(6,6,6);\n"
+"    selection-background-color: #aaffaa;\n"
+"    selection-color: black;\n"
+"    border: none;\n"
+"}\n"
+"QCalendarWidget QAbstractItemView:disabled {\n"
+"    color: rgba(255,255,255,100);\n"
+"}\n"
+"QToolButton {\n"
+"    icon-size: 10px, 10px;\n"
+"    width: 100px;\n"
+"    height: 25px;\n"
+"}\n"
+"QToolButton#qt_calendar_prevmonth {\n"
+"    background-color: rgb(6,6,6);\n"
+"    width: 30px;\n"
+"    border-radius: 3px;\n"
+"    qproperty-icon: url(:/MainIcons/icons/calendar_leftW.png);\n"
+"    icon-size: 20px;\n"
+"}\n"
+"QToolButton#qt_calendar_prevmonth:hover {\n"
+"    background: white;\n"
+"    qproperty-icon: url(:/MainIcons/icons/calendar_leftB.png);\n"
+"}\n"
+"QToolButton#qt_calendar_nextmonth {\n"
+"    background-color: rgb(6,6,6);\n"
+"    width: 30px;\n"
+"    border-radius: 3px;\n"
+"    qproperty-icon: url(:/MainIcons/icons/calendar_rightW.png);\n"
+"    icon-size: 20px;\n"
+"}\n"
+"QToolButton#qt_calendar_nextmonth:hover {\n"
+"    background: white;\n"
+"    qproperty-icon: url(:/MainIcons/icons/calendar_rightB.png);\n"
+"}\n"
+"QToolButton#qt_calendar_monthbutton {\n"
+"    background: rgb(6,6,6);\n"
+"    font-size: 13px;\n"
+"    width: 90px;\n"
+"}\n"
+"\n"
+"QToolButton#qt_calendar_yearbutton {\n"
+"    background: rgb(6,6,6);\n"
+"    font-size: 14px;\n"
+"    width: 90px;\n"
+"}\n"
+"#qt_calendar_yearedit {\n"
+"    width: 90px;\n"
+"    selection-color: black;\n"
+"    selection-background-color: #FFDAB9;\n"
+"}\n"
+"\n"
+"#qt_calendar_yearedit::down-button, #qt_calendar_yearedit::up-button { \n"
+"    width: 0;\n"
+"    height: 0;\n"
+"}\n"
+"QCalendarWidget QSpinBox#qt_calendar_yearedit {\n"
+"    qproperty-alignment: AlignCenter;\n"
+"}\n"
+"QToolButton#qt_calendar_monthbutton::menu-indicator{\n"
+"    height: 0px;\n"
+"    width: 0px;\n"
+"}")
+        self.stats_selectdate.setMinimumDate(QtCore.QDate(2020, 1, 1))
+        self.stats_selectdate.setMaximumDate(QtCore.QDate(2100, 12, 31))
+        self.stats_selectdate.setGridVisible(False)
+        self.stats_selectdate.setSelectionMode(QtWidgets.QCalendarWidget.SelectionMode.SingleSelection)
+        self.stats_selectdate.setHorizontalHeaderFormat(QtWidgets.QCalendarWidget.HorizontalHeaderFormat.ShortDayNames)
+        self.stats_selectdate.setVerticalHeaderFormat(QtWidgets.QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
+        self.stats_selectdate.setNavigationBarVisible(True)
+        self.stats_selectdate.setDateEditEnabled(True)
+        self.stats_selectdate.setObjectName("stats_selectdate")
+        self.horizontalLayout_20.addWidget(self.stats_selectdate)
+        self.verticalLayout_22 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_22.setObjectName("verticalLayout_22")
+        self.stats_total = QtWidgets.QLabel(parent=self.user_stats_tab)
+        self.stats_total.setMinimumSize(QtCore.QSize(150, 30))
+        self.stats_total.setMaximumSize(QtCore.QSize(16777215, 30))
+        self.stats_total.setStyleSheet("Color: White;\n"
+"padding-left: 8px;\n"
+"font-size: 13px;\n"
+"")
+        self.stats_total.setObjectName("stats_total")
+        self.verticalLayout_22.addWidget(self.stats_total)
+        self.stats_total_text = QtWidgets.QLabel(parent=self.user_stats_tab)
+        self.stats_total_text.setMinimumSize(QtCore.QSize(150, 150))
+        self.stats_total_text.setStyleSheet("Color: White;\n"
+"padding-left: 8px;\n"
+"font-size: 13px;\n"
+"")
+        self.stats_total_text.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignVCenter)
+        self.stats_total_text.setObjectName("stats_total_text")
+        self.verticalLayout_22.addWidget(self.stats_total_text)
+        self.horizontalLayout_20.addLayout(self.verticalLayout_22)
+        self.verticalLayout_23.addLayout(self.horizontalLayout_20)
+        self.stats_timeline = QtWidgets.QGraphicsView(parent=self.user_stats_tab)
+        self.stats_timeline.setMinimumSize(QtCore.QSize(0, 300))
+        self.stats_timeline.setMaximumSize(QtCore.QSize(16777215, 300))
+        self.stats_timeline.setStyleSheet("QScrollBar:horizontal {\n"
+"    border: 0px;  /* Граница области скролла */\n"
+"    background: rgba(0,0,0,0);        /* Фон скроллбара */\n"
+"    height: 8px;                /* Ширина вертикального скроллбара */\n"
+"    margin: 0 3px 0 3px;      /* Отступы сверху и снизу (чтобы кнопки не обрезались) */\n"
+"}\n"
+"\n"
+"QScrollBar::handle:horizontal {\n"
+"    border-radius: 3px;\n"
+"    background: #111111;        /* Цвет ползунка */\n"
+"    min-width: 10px;           /* Минимальная высота ползунка */\n"
+"}\n"
+"QScrollBar::handle:horizontal:hover {\n"
+"    border-radius: 3px;\n"
+"    background: #FFDAB9;        /* Цвет ползунка */\n"
+"    min-width: 10px;           /* Минимальная высота ползунка */\n"
+"}\n"
+"\n"
+"QScrollBar::add-line:horizontal {\n"
+"    height: 0px;               /* Высота кнопки */\n"
+"}\n"
+"\n"
+"QScrollBar::sub-line:horizontal {\n"
+"    height: 0px;               /* Высота кнопки */\n"
+"}\n"
+"\n"
+"QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {\n"
+"    border: none;               /* Убираем границу стрелок */\n"
+"    width: 0px;\n"
+"    height: 0px;\n"
+"}\n"
+"\n"
+"QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {\n"
+"    background: none;           /* Цвет фона за ползунком */\n"
+"}")
+        self.stats_timeline.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.stats_timeline.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.stats_timeline.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustIgnored)
+        self.stats_timeline.setObjectName("stats_timeline")
+        self.verticalLayout_23.addWidget(self.stats_timeline)
+        self.horizontalLayout_21.addLayout(self.verticalLayout_23)
+        self.horizontalLayout_22.addLayout(self.horizontalLayout_21)
+        self.tabWidget.addTab(self.user_stats_tab, "")
+        self.horizontalLayout_18.addWidget(self.tabWidget)
+        self.stats_users_frame = QtWidgets.QFrame(parent=self.frame_8)
+        self.stats_users_frame.setMinimumSize(QtCore.QSize(240, 0))
+        self.stats_users_frame.setMaximumSize(QtCore.QSize(240, 16777215))
+        self.stats_users_frame.setObjectName("stats_users_frame")
+        self.verticalLayout_18 = QtWidgets.QVBoxLayout(self.stats_users_frame)
+        self.verticalLayout_18.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_18.setSpacing(5)
+        self.verticalLayout_18.setObjectName("verticalLayout_18")
+        self.stats_label = QtWidgets.QLabel(parent=self.stats_users_frame)
+        self.stats_label.setMinimumSize(QtCore.QSize(240, 20))
+        self.stats_label.setMaximumSize(QtCore.QSize(240, 20))
+        self.stats_label.setStyleSheet("Color: White;\n"
+"padding-left: 5px;\n"
+"font-size: 12px;")
+        self.stats_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.stats_label.setObjectName("stats_label")
+        self.verticalLayout_18.addWidget(self.stats_label)
+        self.stats_users_scroll = QtWidgets.QScrollArea(parent=self.stats_users_frame)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.stats_users_scroll.sizePolicy().hasHeightForWidth())
+        self.stats_users_scroll.setSizePolicy(sizePolicy)
+        self.stats_users_scroll.setMinimumSize(QtCore.QSize(240, 0))
+        self.stats_users_scroll.setMaximumSize(QtCore.QSize(240, 16777215))
+        self.stats_users_scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.stats_users_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.stats_users_scroll.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
+        self.stats_users_scroll.setWidgetResizable(True)
+        self.stats_users_scroll.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.stats_users_scroll.setObjectName("stats_users_scroll")
+        self.scrollAreaWidgetContents_3 = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents_3.setGeometry(QtCore.QRect(0, 0, 240, 665))
+        self.scrollAreaWidgetContents_3.setMinimumSize(QtCore.QSize(240, 0))
+        self.scrollAreaWidgetContents_3.setMaximumSize(QtCore.QSize(240, 16777215))
+        self.scrollAreaWidgetContents_3.setObjectName("scrollAreaWidgetContents_3")
+        self.verticalLayout_19 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents_3)
+        self.verticalLayout_19.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_19.setSpacing(0)
+        self.verticalLayout_19.setObjectName("verticalLayout_19")
+        self.stats_users_scroll.setWidget(self.scrollAreaWidgetContents_3)
+        self.verticalLayout_18.addWidget(self.stats_users_scroll)
+        self.horizontalLayout_18.addWidget(self.stats_users_frame)
+        self.horizontalLayout_17.addWidget(self.frame_8)
         self.CentralTabs.addTab(self.stats_tab, "")
         self.logs_tab = QtWidgets.QWidget()
         self.logs_tab.setObjectName("logs_tab")
@@ -867,7 +1147,7 @@ class Ui_MainWindow(object):
         self.logBrowser = QtWidgets.QTextBrowser(parent=self.logs_UMframe)
         font = QtGui.QFont()
         font.setFamily("JetBrains Mono,Helvetica")
-        font.setPointSize(11)
+        font.setPointSize(-1)
         self.logBrowser.setFont(font)
         self.logBrowser.setStyleSheet("QTextBrowser{\n"
 "    selection-background-color:  #FFDAB9;\n"
@@ -989,7 +1269,7 @@ class Ui_MainWindow(object):
         self.logs_level_chooser.setMaximumSize(QtCore.QSize(200, 50))
         font = QtGui.QFont()
         font.setFamily("JetBrains Mono,Helvetica")
-        font.setPointSize(11)
+        font.setPointSize(-1)
         self.logs_level_chooser.setFont(font)
         self.logs_level_chooser.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.logs_level_chooser.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
@@ -1059,7 +1339,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_17.setSpacing(0)
         self.verticalLayout_17.setObjectName("verticalLayout_17")
         self.scrollArea_2.setWidget(self.scrollAreaWidgetContents_2)
-        self.verticalLayout_16.addWidget(self.scrollArea_2)
+        self.verticalLayout_16.addWidget(self.scrollArea_2, 0, QtCore.Qt.AlignmentFlag.AlignHCenter)
         self.horizontalLayout_15.addWidget(self.logs_frame3)
         self.horizontalLayout_16.addLayout(self.horizontalLayout_15)
         self.horizontalLayout_13.addWidget(self.logs_UMframe)
@@ -1123,6 +1403,7 @@ class Ui_MainWindow(object):
         self.conect_websc.setMinimumSize(QtCore.QSize(280, 50))
         self.conect_websc.setMaximumSize(QtCore.QSize(280, 16777215))
         self.conect_websc.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.conect_websc.setLayoutDirection(QtCore.Qt.LayoutDirection.LeftToRight)
         self.conect_websc.setStyleSheet("QPushButton{\n"
 "    border: 3px solid lime;\n"
 "    border-radius: 10px;\n"
@@ -1181,7 +1462,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.CentralTabs.setCurrentIndex(3)
+        self.CentralTabs.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -1205,7 +1486,20 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "Fast Commands:"))
         self.button_term_shlepki.setText(_translate("MainWindow", "Shlepki"))
         self.CentralTabs.setTabText(self.CentralTabs.indexOf(self.terminal_tab), _translate("MainWindow", "Tab 1"))
-        self.label_2.setText(_translate("MainWindow", "Stats"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.main_stats_tab), _translate("MainWindow", "Tab 1"))
+        self.stats_backbutton.setText(_translate("MainWindow", "Back"))
+        self.stats_nick.setText(_translate("MainWindow", "**Nickname"))
+        self.stats_status.setText(_translate("MainWindow", "**status"))
+        self.stats_total.setText(_translate("MainWindow", "Total:"))
+        self.stats_total_text.setText(_translate("MainWindow", "Voice time: \n"
+"Mute: \n"
+"Full mute: \n"
+"Online time: \n"
+"Offline time: \n"
+"Voice alone: \n"
+"AFK time:"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.user_stats_tab), _translate("MainWindow", "Tab 2"))
+        self.stats_label.setText(_translate("MainWindow", "Discord users:"))
         self.CentralTabs.setTabText(self.CentralTabs.indexOf(self.stats_tab), _translate("MainWindow", "Page"))
         self.logBrowser.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"

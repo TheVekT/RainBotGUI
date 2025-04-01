@@ -14,8 +14,8 @@ from rainbotgui.utils.win import *
 from rainbotgui.utils.btns_style import get_btns_style_settings
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
-from rainbotgui.gui.pages_func import Terminal_Page, Websocket_Page, logs_Page, Settings_Page
-from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify
+from rainbotgui.gui.pages_func import Terminal_Page, Websocket_Page, logs_Page, Settings_Page, Stats_Page
+from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify, discord_member_button
 
 class MainWindow(QMainWindow):
     websocket_setup = QtCore.pyqtSignal()
@@ -75,7 +75,6 @@ class MainWindow(QMainWindow):
 
 
         self.ui.menuButton.clicked.connect(self.left_menu_minimize)
-
         self.ui.minimize_btn.clicked.connect(self.minimize_window)
         self.ui.close_btn.clicked.connect(self.close_window)
         self.ui.fullscreen_btn.clicked.connect(self.toggle_fullscreen)
@@ -87,7 +86,6 @@ class MainWindow(QMainWindow):
         self.ui.Settings_btn.clicked.connect(lambda: self.switch_tab(4))
         self.ui.wbsocket_btn.clicked.connect(lambda: self.switch_tab(3))
         self.ui.server_btn.clicked.connect(lambda: self.switch_tab(5))
-
         
         
         self.setup_pages()
@@ -113,8 +111,10 @@ class MainWindow(QMainWindow):
         self.terminal_page = Terminal_Page(self.websocket_client, self.ui, self)
         self.websocket_page = Websocket_Page(self.websocket_client, self.ui, self)
         self.logs_page = logs_Page(self.websocket_client, self.ui, self)
+        self.stats_page = Stats_Page(self.websocket_client, self.ui, self)
         self.settings_page = Settings_Page(self.websocket_client, self.ui, self)
-        
+        self.settings_page.load_settings()
+
     def buttons_hover_init(self):
         self.BUTTON_STYLE_SETTINGS = get_btns_style_settings(self.ui)
         # Привязываем начальные иконки и события к кнопкам

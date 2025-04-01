@@ -3,11 +3,13 @@ import os
 import json
 from qasync import QEventLoop, asyncSlot
 from PyQt6.QtCore import Qt, QEvent, QObject
-from PyQt6 import QtGui, QtWidgets
+from PyQt6 import QtGui, QtWidgets, QtCore
+from PyQt6.QtWidgets import QGraphicsScene, QGraphicsRectItem
 from rainbotgui.gui.resources import resources
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
-from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify, logfile_widget, Find_Widget
+from rainbotgui.gui.widgets import Info_Notify, Success_Notify, Error_Notify, logfile_widget, Find_Widget, discord_member_button
+
 
 class Terminal_Page(QObject):
     def __init__(self, wbsocet_obj: RainBot_Websocket, ui: Ui_MainWindow, main_win):
@@ -297,7 +299,7 @@ class Settings_Page(QObject):
         self.ui = ui
         self.main_win = main_win
         self.websocket_client = wbsocet_obj
-
+        self.settings = {}
         self.settings_path = os.path.join(os.getcwd(), "settings.json")
         self.default_settings = {
             "websocket_uri": "ws://192.168.0.106:8765",
@@ -305,7 +307,7 @@ class Settings_Page(QObject):
             "autoswipe_left_menu": False
         }
         self.create_settings_file()
-        self.load_settings()
+
 
     def create_settings_file(self):
         if not os.path.exists(self.settings_path):
@@ -319,15 +321,170 @@ class Settings_Page(QObject):
     def return_settings(self):
         try:
             with open(self.settings_path, "r", encoding="utf-8") as file:
-                settings = json.load(file)
-            return settings
+                self.settings = json.load(file)
+            return self.settings
         except Exception as e:
             print(f"Error loading settings: {e}")
             return self.default_settings
+    
+    def _load_settings(self):
+        self.settings = self.return_settings()
+    
+    @asyncSlot()    
+    async def load_settings(self):
+        self._load_settings()
+        self.ui.menuButton.click()  if self.settings['autoswipe_left_menu'] else None
+        await asyncio.sleep(0.1)
+        self.ui.conect_websc.click() if self.settings['autoconnect'] else None
         
-    def load_settings(self):
-        settings = self.return_settings()
-        self.ui.conect_websc.click() if settings['autoconnect'] else None
-        self.ui.menuButton.click() if settings['autoswipe_left_menu'] else None
+        
+        
+        
+stats_texts ={
+    "voice_online": "Voice online",
+    "offline": "Offline",
+    "voice_afk": "Voice AFK",
+    "voice_alone": "Voice alone",
+    "voice_deaf": "Full mute",
+    "voice_mute": "Mute",
+    "online": "Online",
+}
 
+class Stats_Page(QObject):
+    def __init__(self, wbsocet_obj: RainBot_Websocket, ui: Ui_MainWindow, main_win):
+        super().__init__()
+        self.ui = ui
+        self.main_win = main_win
+        self.websocket_client = wbsocet_obj
+        self.scrollmembers = QtWidgets.QButtonGroup(self.ui.scrollAreaWidgetContents_3)
+        self.websocket_client.connection_opened.connect(lambda: self.update_discord_member_list(on_open=True))
+        self.member_in_list: dict[int|str:discord_member_button] = {}
+        self.ui.verticalLayout_19.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.ui.horizontalLayout_19.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.ui.stats_user_icon.setScaledContents(True)
+        self.ui.horizontalLayout_19.setContentsMargins(0, 5, 0, 5)
+        self.ui.stats_backbutton.clicked.connect(lambda: self.ui.tabWidget.setCurrentIndex(0))
+        self.ui.stats_selectdate.setSelectedDate(QtCore.QDate.currentDate())
+        self.ui.stats_selectdate.selectionChanged.connect(self.show_stats)
+        self.start_updating()
+        self.ui.stats_timeline.installEventFilter(self)
+        self.ui.stats_timeline.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         
+    def start_updating(self):
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.update_discord_member_list)
+        self.timer.start(5000) 
+
+    @asyncSlot()    
+    async def show_stats(self):
+        id = self.scrollmembers.checkedButton().parent().id
+        date = self.ui.stats_selectdate.selectedDate().toString("yyyy.MM.dd")
+        date2 = self.ui.stats_selectdate.selectedDate().toString("yyyy-MM-dd")
+        data = await self.websocket_client.get_discord_member_stat(id, date)
+        total = data.get('total')
+        if total != "No data available":
+            timelined = data.get('timeline')
+            self.ui.stats_total.setText("Total:")
+            total = data['total']['days'][date2]
+            self.ui.stats_total_text.setText(
+                f"Voice time: {total.get('voice_online', '0.00h')}\n"
+                f"Mute: {total.get('voice_mute', '0.00h')}\n"
+                f"Full mute: {total.get('voice_deaf', '0.00h')}\n"
+                f"Online time: {total.get('online', '0.00h')}\n"
+                f"Offline time: {total.get('offline', '0.00h')}\n"
+                f"Voice alone: {total.get('voice_alone', '0.00h')}\n"
+                f"AFK time: {total.get('voice_afk', '0.00h')}"
+            )
+            self.update_timeline(timelined, date2)
+        else:
+            self.ui.stats_total.setText("Total:")
+            self.ui.stats_total_text.setText("No data available")
+            
+    def update_timeline(self, timelined, date2):
+            # Создаем сцену для отрисовки таймлайна
+            scene_width = 800
+            scene_height = 10
+            scene = QtWidgets.QGraphicsScene(0, 0, scene_width, scene_height)
+            self.ui.stats_timeline.setScene(scene)
+
+            # Определяем начало и конец дня для расчета относительных координат.
+            day_start = QtCore.QDateTime.fromString(date2 + "T00:00:00", "yyyy-MM-dd'T'HH:mm:ss")
+            day_end   = QtCore.QDateTime.fromString(date2 + "T23:59:59", "yyyy-MM-dd'T'HH:mm:ss")
+            total_seconds = day_start.secsTo(day_end)
+
+            # Функция выбора цвета по состоянию
+            def state_color(state: str) -> QtGui.QColor:
+                mapping = {
+                    "offline": QtGui.QColor("#6e6e6e"),
+                    "voice_online": QtGui.QColor("#00ffdd"),
+                    "voice_mute": QtGui.QColor("#aeff00"),
+                    "voice_deaf": QtGui.QColor("#ff5500"),
+                    "voice_afk": QtGui.QColor("#ff00d0"),
+                    "voice_alone": QtGui.QColor("#a200ff"),
+                    "online": QtGui.QColor("#288c00"),
+                }
+                return mapping.get(state, QtGui.QColor("gray"))
+
+            pen = QtGui.QPen()
+            pen.setStyle(Qt.PenStyle.NoPen)
+
+            timeline_list = timelined.get('timeline', []) if isinstance(timelined, dict) else timelined
+            for segment in timeline_list:
+                seg_start = QtCore.QDateTime.fromString(segment['start_time'], Qt.DateFormat.ISODate)
+                seg_end   = QtCore.QDateTime.fromString(segment['end_time'], Qt.DateFormat.ISODate)
+                offset = day_start.secsTo(seg_start)
+                duration = seg_start.secsTo(seg_end)
+                x = (offset / total_seconds) * scene_width
+                w = (duration / total_seconds) * scene_width
+                rect = QtCore.QRectF(x, 0, w, scene_height)
+                rect_item = QtWidgets.QGraphicsRectItem(rect)
+                rect_item.setBrush(state_color(segment['state']))
+                rect_item.setPen(pen)  # установка пера внутри цикла после создания rect_item
+                scene.addItem(rect_item)
+
+    def eventFilter(self, source, event):
+        if source is self.ui.stats_timeline and event.type() == QtCore.QEvent.Type.Wheel:
+            if event.angleDelta().y() > 0:
+                factor = 1.1
+            else:
+                factor = 0.9
+            self.ui.stats_timeline.scale(factor, 1)
+            return True
+        return super().eventFilter(source, event)         
+                
+
+    
+    @asyncSlot()
+    async def update_discord_member_list(self, on_open = False):
+        if not self.websocket_client.isConnected():
+            print(self.websocket_client.isConnected())
+            return
+        elif self.websocket_client.isConnected():
+            await asyncio.sleep(0.05)
+            data = await self.websocket_client.get_discord_members()
+            for member_id in data:
+                if member_id in self.member_in_list.keys():
+                    if self.member_in_list[member_id].nick != data[member_id]['nickname']:
+                        self.member_in_list[member_id].nick = data[member_id]['nickname']
+                    if self.member_in_list[member_id].icon != data[member_id]['avatar_url']:
+                        self.member_in_list[member_id].set_icon(data[member_id]['avatar_url'])
+                    if self.member_in_list[member_id].id != int(member_id):
+                        self.member_in_list[member_id].id = int(member_id)
+                    self.member_in_list[member_id].update_status(data[member_id]['status'])
+                    continue
+                nick = data[member_id]['nickname']
+                icon = data[member_id]['avatar_url']
+                status = data[member_id]['status']
+                member = discord_member_button(nick=nick, icon=icon, 
+                                                 status=status,
+                                                 id=member_id,
+                                                 parent=None, 
+                                                 websocket_client=self.websocket_client, 
+                                                 ui=self.ui, 
+                                                 layout=self.ui.verticalLayout_19)
+                member.member_btn.clicked.connect(self.show_stats)
+                self.ui.verticalLayout_19.addWidget(member)
+                self.scrollmembers.addButton(member.member_btn)
+                self.member_in_list[member_id] = member
+                await asyncio.sleep(0.05)
+                

@@ -63,6 +63,9 @@
      <height>720</height>
     </size>
    </property>
+   <property name="styleSheet">
+    <string notr="true">color: white;</string>
+   </property>
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <property name="spacing">
      <number>0</number>
@@ -1003,7 +1006,7 @@ QTabBar::tab {
 </string>
             </property>
             <property name="currentIndex">
-             <number>3</number>
+             <number>1</number>
             </property>
             <property name="usesScrollButtons">
              <bool>true</bool>
@@ -1636,7 +1639,7 @@ font-size: 14px;</string>
                             <property name="bottomMargin">
                              <number>0</number>
                             </property>
-                            <item alignment="Qt::AlignTop">
+                            <item>
                              <widget class="QScrollArea" name="scrollArea">
                               <property name="sizePolicy">
                                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -1686,7 +1689,7 @@ font-size: 14px;</string>
                                  <x>0</x>
                                  <y>0</y>
                                  <width>200</width>
-                                 <height>69</height>
+                                 <height>429</height>
                                 </rect>
                                </property>
                                <property name="maximumSize">
@@ -1813,22 +1816,612 @@ QPushButton:checked{
              <attribute name="title">
               <string>Page</string>
              </attribute>
-             <widget class="QLabel" name="label_2">
-              <property name="geometry">
-               <rect>
-                <x>90</x>
-                <y>90</y>
-                <width>51</width>
-                <height>41</height>
-               </rect>
+             <layout class="QHBoxLayout" name="horizontalLayout_17">
+              <property name="spacing">
+               <number>0</number>
               </property>
-              <property name="styleSheet">
-               <string notr="true">color: white;</string>
+              <property name="leftMargin">
+               <number>0</number>
               </property>
-              <property name="text">
-               <string>Stats</string>
+              <property name="topMargin">
+               <number>0</number>
               </property>
-             </widget>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item>
+               <widget class="QFrame" name="frame_8">
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_18">
+                 <property name="spacing">
+                  <number>5</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>5</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QTabWidget" name="tabWidget">
+                   <widget class="QWidget" name="main_stats_tab">
+                    <attribute name="title">
+                     <string>Tab 1</string>
+                    </attribute>
+                    <layout class="QHBoxLayout" name="horizontalLayout_23">
+                     <property name="spacing">
+                      <number>0</number>
+                     </property>
+                     <property name="leftMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>0</number>
+                     </property>
+                    </layout>
+                   </widget>
+                   <widget class="QWidget" name="user_stats_tab">
+                    <attribute name="title">
+                     <string>Tab 2</string>
+                    </attribute>
+                    <layout class="QHBoxLayout" name="horizontalLayout_22">
+                     <property name="spacing">
+                      <number>0</number>
+                     </property>
+                     <property name="leftMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>5</number>
+                     </property>
+                     <item>
+                      <layout class="QHBoxLayout" name="horizontalLayout_21">
+                       <item>
+                        <layout class="QVBoxLayout" name="verticalLayout_23">
+                         <item>
+                          <layout class="QVBoxLayout" name="verticalLayout_21">
+                           <item>
+                            <widget class="QPushButton" name="stats_backbutton">
+                             <property name="minimumSize">
+                              <size>
+                               <width>100</width>
+                               <height>25</height>
+                              </size>
+                             </property>
+                             <property name="maximumSize">
+                              <size>
+                               <width>100</width>
+                               <height>25</height>
+                              </size>
+                             </property>
+                             <property name="cursor">
+                              <cursorShape>PointingHandCursor</cursorShape>
+                             </property>
+                             <property name="styleSheet">
+                              <string notr="true">QPushButton{
+	border-radius: 5px;
+	background-color: rgb(10, 10, 10);
+	color: rgba(255, 255, 255, 200);
+	font-size: 13px;
+	border: none;
+}
+QPushButton:hover{
+	color: black;
+	background-color: #FFDAB9;
+}</string>
+                             </property>
+                             <property name="text">
+                              <string>Back</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <layout class="QHBoxLayout" name="horizontalLayout_19">
+                             <property name="spacing">
+                              <number>15</number>
+                             </property>
+                             <item>
+                              <widget class="QLabel" name="stats_user_icon">
+                               <property name="minimumSize">
+                                <size>
+                                 <width>100</width>
+                                 <height>100</height>
+                                </size>
+                               </property>
+                               <property name="maximumSize">
+                                <size>
+                                 <width>100</width>
+                                 <height>100</height>
+                                </size>
+                               </property>
+                               <property name="text">
+                                <string/>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <layout class="QVBoxLayout" name="verticalLayout_20">
+                               <property name="spacing">
+                                <number>5</number>
+                               </property>
+                               <item>
+                                <widget class="QLabel" name="stats_nick">
+                                 <property name="minimumSize">
+                                  <size>
+                                   <width>220</width>
+                                   <height>35</height>
+                                  </size>
+                                 </property>
+                                 <property name="maximumSize">
+                                  <size>
+                                   <width>220</width>
+                                   <height>35</height>
+                                  </size>
+                                 </property>
+                                 <property name="styleSheet">
+                                  <string notr="true">Color: White;
+padding-left: 8px;
+font-size: 15px;
+</string>
+                                 </property>
+                                 <property name="text">
+                                  <string>**Nickname</string>
+                                 </property>
+                                </widget>
+                               </item>
+                               <item>
+                                <widget class="QLabel" name="stats_status">
+                                 <property name="minimumSize">
+                                  <size>
+                                   <width>220</width>
+                                   <height>35</height>
+                                  </size>
+                                 </property>
+                                 <property name="maximumSize">
+                                  <size>
+                                   <width>220</width>
+                                   <height>35</height>
+                                  </size>
+                                 </property>
+                                 <property name="styleSheet">
+                                  <string notr="true">Color: White;
+padding-left: 8px;
+font-size: 13px;
+</string>
+                                 </property>
+                                 <property name="text">
+                                  <string>**status</string>
+                                 </property>
+                                </widget>
+                               </item>
+                              </layout>
+                             </item>
+                            </layout>
+                           </item>
+                          </layout>
+                         </item>
+                         <item>
+                          <layout class="QHBoxLayout" name="horizontalLayout_20">
+                           <item>
+                            <widget class="QCalendarWidget" name="stats_selectdate">
+                             <property name="minimumSize">
+                              <size>
+                               <width>370</width>
+                               <height>220</height>
+                              </size>
+                             </property>
+                             <property name="maximumSize">
+                              <size>
+                               <width>370</width>
+                               <height>220</height>
+                              </size>
+                             </property>
+                             <property name="font">
+                              <font>
+                               <family>JetBrains Mono,Helvetica</family>
+                               <kerning>true</kerning>
+                              </font>
+                             </property>
+                             <property name="styleSheet">
+                              <string notr="true">QCalendarWidget{
+	background-color: rgb(6,6,6);
+}
+QCalendarWidget QAbstractItemView{
+	color: white;
+	background-color: rgb(6,6,6);
+	alternate-background-color: rgb(6,6,6);
+	selection-background-color: #aaffaa;
+	selection-color: black;
+	border: none;
+}
+QCalendarWidget QAbstractItemView:disabled {
+	color: rgba(255,255,255,100);
+}
+QToolButton {
+    icon-size: 10px, 10px;
+    width: 100px;
+    height: 25px;
+}
+QToolButton#qt_calendar_prevmonth {
+    background-color: rgb(6,6,6);
+    width: 30px;
+	border-radius: 3px;
+    qproperty-icon: url(:/MainIcons/icons/calendar_leftW.png);
+	icon-size: 20px;
+}
+QToolButton#qt_calendar_prevmonth:hover {
+    background: white;
+    qproperty-icon: url(:/MainIcons/icons/calendar_leftB.png);
+}
+QToolButton#qt_calendar_nextmonth {
+    background-color: rgb(6,6,6);
+    width: 30px;
+	border-radius: 3px;
+    qproperty-icon: url(:/MainIcons/icons/calendar_rightW.png);
+	icon-size: 20px;
+}
+QToolButton#qt_calendar_nextmonth:hover {
+    background: white;
+    qproperty-icon: url(:/MainIcons/icons/calendar_rightB.png);
+}
+QToolButton#qt_calendar_monthbutton {
+    background: rgb(6,6,6);
+	font-size: 13px;
+    width: 90px;
+}
+
+QToolButton#qt_calendar_yearbutton {
+    background: rgb(6,6,6);
+	font-size: 14px;
+    width: 90px;
+}
+#qt_calendar_yearedit {
+    width: 90px;
+	selection-color: black;
+    selection-background-color: #FFDAB9;
+}
+
+#qt_calendar_yearedit::down-button, #qt_calendar_yearedit::up-button { 
+    width: 0;
+	height: 0;
+}
+QCalendarWidget QSpinBox#qt_calendar_yearedit {
+    qproperty-alignment: AlignCenter;
+}
+QToolButton#qt_calendar_monthbutton::menu-indicator{
+    height: 0px;
+    width: 0px;
+}</string>
+                             </property>
+                             <property name="minimumDate">
+                              <date>
+                               <year>2020</year>
+                               <month>1</month>
+                               <day>1</day>
+                              </date>
+                             </property>
+                             <property name="maximumDate">
+                              <date>
+                               <year>2100</year>
+                               <month>12</month>
+                               <day>31</day>
+                              </date>
+                             </property>
+                             <property name="gridVisible">
+                              <bool>false</bool>
+                             </property>
+                             <property name="selectionMode">
+                              <enum>QCalendarWidget::SingleSelection</enum>
+                             </property>
+                             <property name="horizontalHeaderFormat">
+                              <enum>QCalendarWidget::ShortDayNames</enum>
+                             </property>
+                             <property name="verticalHeaderFormat">
+                              <enum>QCalendarWidget::NoVerticalHeader</enum>
+                             </property>
+                             <property name="navigationBarVisible">
+                              <bool>true</bool>
+                             </property>
+                             <property name="dateEditEnabled">
+                              <bool>true</bool>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <layout class="QVBoxLayout" name="verticalLayout_22">
+                             <item>
+                              <widget class="QLabel" name="stats_total">
+                               <property name="minimumSize">
+                                <size>
+                                 <width>150</width>
+                                 <height>30</height>
+                                </size>
+                               </property>
+                               <property name="maximumSize">
+                                <size>
+                                 <width>16777215</width>
+                                 <height>30</height>
+                                </size>
+                               </property>
+                               <property name="styleSheet">
+                                <string notr="true">Color: White;
+padding-left: 8px;
+font-size: 13px;
+</string>
+                               </property>
+                               <property name="text">
+                                <string>Total:</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QLabel" name="stats_total_text">
+                               <property name="minimumSize">
+                                <size>
+                                 <width>150</width>
+                                 <height>150</height>
+                                </size>
+                               </property>
+                               <property name="styleSheet">
+                                <string notr="true">Color: White;
+padding-left: 8px;
+font-size: 13px;
+</string>
+                               </property>
+                               <property name="text">
+                                <string>Voice time: 
+Mute: 
+Full mute: 
+Online time: 
+Offline time: 
+Voice alone: 
+AFK time:</string>
+                               </property>
+                               <property name="alignment">
+                                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                               </property>
+                              </widget>
+                             </item>
+                            </layout>
+                           </item>
+                          </layout>
+                         </item>
+                         <item>
+                          <widget class="QGraphicsView" name="stats_timeline">
+                           <property name="minimumSize">
+                            <size>
+                             <width>0</width>
+                             <height>300</height>
+                            </size>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>16777215</width>
+                             <height>300</height>
+                            </size>
+                           </property>
+                           <property name="styleSheet">
+                            <string notr="true">QScrollBar:horizontal {
+    border: 0px;  /* Граница области скролла */
+    background: rgba(0,0,0,0);        /* Фон скроллбара */
+    height: 8px;                /* Ширина вертикального скроллбара */
+    margin: 0 3px 0 3px;      /* Отступы сверху и снизу (чтобы кнопки не обрезались) */
+}
+
+QScrollBar::handle:horizontal {
+	border-radius: 3px;
+    background: #111111;        /* Цвет ползунка */
+    min-width: 10px;           /* Минимальная высота ползунка */
+}
+QScrollBar::handle:horizontal:hover {
+	border-radius: 3px;
+    background: #FFDAB9;        /* Цвет ползунка */
+    min-width: 10px;           /* Минимальная высота ползунка */
+}
+
+QScrollBar::add-line:horizontal {
+    height: 0px;               /* Высота кнопки */
+}
+
+QScrollBar::sub-line:horizontal {
+    height: 0px;               /* Высота кнопки */
+}
+
+QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {
+    border: none;               /* Убираем границу стрелок */
+    width: 0px;
+    height: 0px;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;           /* Цвет фона за ползунком */
+}</string>
+                           </property>
+                           <property name="verticalScrollBarPolicy">
+                            <enum>Qt::ScrollBarAlwaysOff</enum>
+                           </property>
+                           <property name="horizontalScrollBarPolicy">
+                            <enum>Qt::ScrollBarAsNeeded</enum>
+                           </property>
+                           <property name="sizeAdjustPolicy">
+                            <enum>QAbstractScrollArea::AdjustIgnored</enum>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </item>
+                    </layout>
+                   </widget>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="stats_users_frame">
+                   <property name="minimumSize">
+                    <size>
+                     <width>240</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>240</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_18">
+                    <property name="spacing">
+                     <number>5</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="stats_label">
+                      <property name="minimumSize">
+                       <size>
+                        <width>240</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>240</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">Color: White;
+padding-left: 5px;
+font-size: 12px;</string>
+                      </property>
+                      <property name="text">
+                       <string>Discord users:</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QScrollArea" name="stats_users_scroll">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>240</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>240</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="verticalScrollBarPolicy">
+                       <enum>Qt::ScrollBarAlwaysOff</enum>
+                      </property>
+                      <property name="horizontalScrollBarPolicy">
+                       <enum>Qt::ScrollBarAlwaysOff</enum>
+                      </property>
+                      <property name="sizeAdjustPolicy">
+                       <enum>QAbstractScrollArea::AdjustToContents</enum>
+                      </property>
+                      <property name="widgetResizable">
+                       <bool>true</bool>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignHCenter|Qt::AlignTop</set>
+                      </property>
+                      <widget class="QWidget" name="scrollAreaWidgetContents_3">
+                       <property name="geometry">
+                        <rect>
+                         <x>0</x>
+                         <y>0</y>
+                         <width>240</width>
+                         <height>665</height>
+                        </rect>
+                       </property>
+                       <property name="minimumSize">
+                        <size>
+                         <width>240</width>
+                         <height>0</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>240</width>
+                         <height>16777215</height>
+                        </size>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_19">
+                        <property name="spacing">
+                         <number>0</number>
+                        </property>
+                        <property name="leftMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>0</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>0</number>
+                        </property>
+                       </layout>
+                      </widget>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
             </widget>
             <widget class="QWidget" name="logs_tab">
              <attribute name="title">
@@ -2243,7 +2836,7 @@ font-size: 12px;</string>
                            </property>
                           </widget>
                          </item>
-                         <item>
+                         <item alignment="Qt::AlignHCenter">
                           <widget class="QScrollArea" name="scrollArea_2">
                            <property name="sizePolicy">
                             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -2514,6 +3107,9 @@ font-size: 12px;</string>
                          </property>
                          <property name="cursor">
                           <cursorShape>PointingHandCursor</cursorShape>
+                         </property>
+                         <property name="layoutDirection">
+                          <enum>Qt::LeftToRight</enum>
                          </property>
                          <property name="styleSheet">
                           <string notr="true">QPushButton{

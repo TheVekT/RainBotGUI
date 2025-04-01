@@ -1,5 +1,9 @@
 <RCC>
   <qresource prefix="MainIcons">
+    <file>icons/calendar_leftB.png</file>
+    <file>icons/calendar_leftW.png</file>
+    <file>icons/calendar_rightB.png</file>
+    <file>icons/calendar_rightW.png</file>
     <file>icons/download_B.png</file>
     <file>icons/download_W.png</file>
     <file>icons/error_r.png</file>

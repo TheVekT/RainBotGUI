@@ -19,8 +19,9 @@ class RainBot_Websocket(QObject):
         self.archived_logs_queue = asyncio.Queue()
 
         self.log_file_content_queue = asyncio.Queue()
-        
+        self.discord_members_queue = asyncio.Queue()
         self.registered_functions: dict = {}
+        self.discord_member_stat_queue = asyncio.Queue()
 
     def ip(self):
         """Returns the IP address of the connected server."""
@@ -117,7 +118,14 @@ class RainBot_Websocket(QObject):
                                 # Можно выбросить исключение или обработать иначе
                                 # Здесь для простоты - бросим исключение:
                                 raise Exception(f"Server error: {error_message}")
-
+                            case 'discord_members':
+                                # Список участников Discord
+                                members = data.get('message', [])
+                                await self.discord_members_queue.put(members)
+                            case 'discord_member_stat':
+                                # Статистика участника Discord
+                                member_stat = data.get('message', {})
+                                await self.discord_member_stat_queue.put(member_stat)
                     else:
                         # Неизвестное или другое сообщение
                         print(f"Received other message: {data}")
@@ -161,3 +169,22 @@ class RainBot_Websocket(QObject):
         content = await self.log_file_content_queue.get()
         print(f"Received log file content: {content[:50]}...")
         return content
+    
+    async def get_discord_members(self):
+        payload = {
+            "request": "GET_DISCORD_MEMBERS",
+            "arguments": {}
+        }
+        await self.send_command(json.dumps(payload))
+        data = await self.discord_members_queue.get()
+        return data
+    
+    async def get_discord_member_stat(self, member_id: int, date: str):
+        """Получить статистику участника Discord за определенную дату format: YYYY.MM.DD ."""
+        payload = {
+            "request": "GET_DISCORD_MEMBER_STAT",
+            "arguments": {"member_id": member_id, "date": date}
+        }
+        await self.send_command(json.dumps(payload))
+        data = await self.discord_member_stat_queue.get()
+        return data

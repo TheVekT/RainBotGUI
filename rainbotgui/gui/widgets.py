@@ -503,5 +503,99 @@ class logfile_widget(QtWidgets.QWidget):
             self.ui.logBrowser.append(content)
         asyncio.create_task(_get_log_content())
 
+stats_texts ={
+    "voice_online": "Voice online",
+    "offline": "Offline",
+    "voice_afk": "Voice AFK",
+    "voice_alone": "Voice alone",
+    "voice_deaf": "Full mute",
+    "voice_mute": "Mute",
+    "online": "Online",
+}
 
 
+class discord_member_button(QtWidgets.QWidget):
+    def __init__(self, nick, icon, status, id, parent, websocket_client, ui, layout, layout2 = None):
+        super().__init__(parent)
+        self.nick = nick
+        self.icon = icon
+        self.status = status
+        self.id = int(id) if id.isdigit() else id
+        self.ui = ui
+        self.websocket_client = websocket_client
+        self.Parent = parent
+        layout.addWidget(self)
+        layout2.addWidget(self) if layout2 is not None else None
+        self.horizontalLayout = QtWidgets.QHBoxLayout(self)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setSpacing(0)
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.setMinimumSize(QtCore.QSize(240, 35))
+        self.setMaximumSize(QtCore.QSize(240, 35))
+        self.member_btn = QtWidgets.QPushButton(nick, parent=self)
+        self.member_btn.setMinimumSize(QtCore.QSize(205, 35))
+        self.member_btn.setMaximumSize(QtCore.QSize(205, 35))
+        self.member_btn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.member_btn.setStyleSheet("QPushButton{\n"
+                              "    background-color: rgba(0, 0, 0, 0);\n"
+                              "    padding-left: 5px;\n"
+                              "    border-radius: 0px;\n"
+                              "    color: white;\n"
+                              "    font-size: 11px;\n"
+                              "    border: none;\n"
+                              "	   text-align: left;\n"
+                              "}\n"
+                              "QPushButton:hover{\n"
+                              "    background-color: #FFDAB9;\n"
+                              "    color: black;\n"
+                              "}\n"
+                              "QPushButton:checked{\n"
+                              "    background-color: #FFDAB9;\n"
+                              "    color: black;\n"
+                              "}\n")
+        self.logo = QtWidgets.QLabel(parent=self)
+        self.logo.setMinimumSize(QtCore.QSize(35, 35))
+        self.logo.setMaximumSize(QtCore.QSize(35, 35))
+        self.logo.setText("")
+        self.logo.setScaledContents(True)
+        self.logo.setObjectName("logo")
+        self.member_btn.setCheckable(True)
+
+        self.member_btn.setObjectName("member_btn")
+        self.horizontalLayout.addWidget(self.logo, 0, Qt.AlignmentFlag.AlignLeft)
+        self.horizontalLayout.addWidget(self.member_btn, 0, Qt.AlignmentFlag.AlignRight)
+        self.show()
+        self.set_icon(self.icon)
+        self.member_btn.clicked.connect(self.open_stat)
+    def open_stat(self):
+        if self.ui.tabWidget.currentIndex() == 0:
+            self.ui.tabWidget.setCurrentIndex(1)
+        self.ui.stats_user_icon.setPixmap(self.logo.pixmap())
+        self.ui.stats_nick.setText(self.nick)
+        self.ui.stats_selectdate.clearFocus()
+        self.ui.stats_total.setText("")
+        self.ui.stats_total_text.setText("")
+        self.ui.stats_status.setText(stats_texts[self.status])
+        
+    def update_status(self, status):
+        if status != self.status:
+            self.status = status
+            self.ui.stats_status.setText(stats_texts[status])
+            
+            
+
+    def set_icon(self, icon_path):
+        import requests
+        """Загружает и устанавливает изображение, поддерживает локальные файлы и URL"""
+        if icon_path.startswith("http"):  # Если это URL
+            try:
+                response = requests.get(icon_path, timeout=5)
+                if response.status_code == 200:
+                    pixmap = QtGui.QPixmap()
+                    pixmap.loadFromData(response.content)
+                    self.logo.setPixmap(pixmap)
+            except Exception as e:
+                print(f"Ошибка загрузки изображения: {e}")
+        else:  # Если это локальный файл
+            pixmap = QtGui.QPixmap(icon_path)
+            self.logo.setPixmap(pixmap)
