@@ -2213,21 +2213,45 @@ AFK time:</string>
                           </layout>
                          </item>
                          <item>
-                          <widget class="QGraphicsView" name="stats_timeline">
+                          <widget class="QFrame" name="frame_9">
                            <property name="minimumSize">
                             <size>
                              <width>0</width>
                              <height>300</height>
                             </size>
                            </property>
-                           <property name="maximumSize">
-                            <size>
-                             <width>16777215</width>
-                             <height>300</height>
-                            </size>
-                           </property>
-                           <property name="styleSheet">
-                            <string notr="true">QScrollBar:horizontal {
+                           <layout class="QVBoxLayout" name="verticalLayout_24">
+                            <property name="spacing">
+                             <number>0</number>
+                            </property>
+                            <property name="leftMargin">
+                             <number>0</number>
+                            </property>
+                            <property name="topMargin">
+                             <number>0</number>
+                            </property>
+                            <property name="rightMargin">
+                             <number>0</number>
+                            </property>
+                            <property name="bottomMargin">
+                             <number>0</number>
+                            </property>
+                            <item>
+                             <widget class="QGraphicsView" name="stats_timeline">
+                              <property name="minimumSize">
+                               <size>
+                                <width>0</width>
+                                <height>300</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>16777215</width>
+                                <height>300</height>
+                               </size>
+                              </property>
+                              <property name="styleSheet">
+                               <string notr="true">QScrollBar:horizontal {
     border: 0px;  /* Граница области скролла */
     background: rgba(0,0,0,0);        /* Фон скроллбара */
     height: 8px;                /* Ширина вертикального скроллбара */
@@ -2262,16 +2286,19 @@ QScrollBar::up-arrow:horizontal, QScrollBar::down-arrow:horizontal {
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: none;           /* Цвет фона за ползунком */
 }</string>
-                           </property>
-                           <property name="verticalScrollBarPolicy">
-                            <enum>Qt::ScrollBarAlwaysOff</enum>
-                           </property>
-                           <property name="horizontalScrollBarPolicy">
-                            <enum>Qt::ScrollBarAsNeeded</enum>
-                           </property>
-                           <property name="sizeAdjustPolicy">
-                            <enum>QAbstractScrollArea::AdjustIgnored</enum>
-                           </property>
+                              </property>
+                              <property name="verticalScrollBarPolicy">
+                               <enum>Qt::ScrollBarAlwaysOff</enum>
+                              </property>
+                              <property name="horizontalScrollBarPolicy">
+                               <enum>Qt::ScrollBarAsNeeded</enum>
+                              </property>
+                              <property name="sizeAdjustPolicy">
+                               <enum>QAbstractScrollArea::AdjustIgnored</enum>
+                              </property>
+                             </widget>
+                            </item>
+                           </layout>
                           </widget>
                          </item>
                         </layout>

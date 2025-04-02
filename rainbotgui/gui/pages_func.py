@@ -2,9 +2,9 @@ import asyncio
 import os
 import json
 from qasync import QEventLoop, asyncSlot
-from PyQt6.QtCore import Qt, QEvent, QObject
+from PyQt6.QtCore import Qt, QEvent, QObject, QThread, QTimer
 from PyQt6 import QtGui, QtWidgets, QtCore
-from PyQt6.QtWidgets import QGraphicsScene, QGraphicsRectItem
+from PyQt6.QtWidgets import QGraphicsScene, QGraphicsRectItem, QVBoxLayout
 from rainbotgui.gui.resources import resources
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
@@ -35,7 +35,10 @@ class Terminal_Page(QObject):
         self.ui.button_find_in_console.clicked.connect(self.toggle_find)
         self.websocket_client.new_log_signal.connect(self.handle_new_log_message)
     
-    def set_tooltip(self):
+    @asyncSlot()
+    async def set_tooltip(self):
+        await self.websocket_client.set_registered_functions()
+        await asyncio.sleep(0.5)
         text = "Registered commands:"
         coms = self.websocket_client.registered_functions.get('registered_functions')
         for command in coms:
@@ -178,7 +181,6 @@ class Websocket_Page(QObject):
             if self.websocket_client.isConnected():
                 Success_Notify("Success connected", "Successfully connected to websocket server", f"Connect on {self.websocket_client.ip()}:{self.websocket_client.port()}", parent=self.main_win)
                 await self.load_logs()
-                await self.websocket_client.set_registered_functions()
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connected.png"))
                 self.ui.label_6.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">Connected to:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.ip()}</span></p></body></html>")
                 self.ui.label_7.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">on port:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.port()}</span></p></body></html>")
@@ -339,16 +341,7 @@ class Settings_Page(QObject):
         
         
         
-        
-stats_texts ={
-    "voice_online": "Voice online",
-    "offline": "Offline",
-    "voice_afk": "Voice AFK",
-    "voice_alone": "Voice alone",
-    "voice_deaf": "Full mute",
-    "voice_mute": "Mute",
-    "online": "Online",
-}
+
 
 class Stats_Page(QObject):
     def __init__(self, wbsocet_obj: RainBot_Websocket, ui: Ui_MainWindow, main_win):
@@ -356,9 +349,10 @@ class Stats_Page(QObject):
         self.ui = ui
         self.main_win = main_win
         self.websocket_client = wbsocet_obj
+        
         self.scrollmembers = QtWidgets.QButtonGroup(self.ui.scrollAreaWidgetContents_3)
         self.websocket_client.connection_opened.connect(lambda: self.update_discord_member_list(on_open=True))
-        self.member_in_list: dict[int|str:discord_member_button] = {}
+        self.member_in_list: dict[int | str, discord_member_button] = {}
         self.ui.verticalLayout_19.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.ui.horizontalLayout_19.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.ui.stats_user_icon.setScaledContents(True)
@@ -366,9 +360,7 @@ class Stats_Page(QObject):
         self.ui.stats_backbutton.clicked.connect(lambda: self.ui.tabWidget.setCurrentIndex(0))
         self.ui.stats_selectdate.setSelectedDate(QtCore.QDate.currentDate())
         self.ui.stats_selectdate.selectionChanged.connect(self.show_stats)
-        self.start_updating()
-        self.ui.stats_timeline.installEventFilter(self)
-        self.ui.stats_timeline.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        #self.start_updating()
         
     def start_updating(self):
         self.timer = QtCore.QTimer(self)
@@ -430,37 +422,40 @@ class Stats_Page(QObject):
             self.ui.stats_timeline = chart_view
 
 
-    @asyncSlot()
-    async def update_discord_member_list(self, on_open = False):
+
+    def update_discord_member_list(self, on_open=False):
         if not self.websocket_client.isConnected():
             print(self.websocket_client.isConnected())
             return
-        elif self.websocket_client.isConnected():
-            await asyncio.sleep(0.05)
-            data = await self.websocket_client.get_discord_members()
-            for member_id in data:
-                if member_id in self.member_in_list.keys():
-                    if self.member_in_list[member_id].nick != data[member_id]['nickname']:
-                        self.member_in_list[member_id].nick = data[member_id]['nickname']
-                    if self.member_in_list[member_id].icon != data[member_id]['avatar_url']:
-                        self.member_in_list[member_id].set_icon(data[member_id]['avatar_url'])
-                    if self.member_in_list[member_id].id != int(member_id):
-                        self.member_in_list[member_id].id = int(member_id)
-                    self.member_in_list[member_id].update_status(data[member_id]['status'])
-                    continue
-                nick = data[member_id]['nickname']
-                icon = data[member_id]['avatar_url']
-                status = data[member_id]['status']
-                member = discord_member_button(nick=nick, icon=icon, 
-                                                 status=status,
-                                                 id=member_id,
-                                                 parent=None, 
-                                                 websocket_client=self.websocket_client, 
-                                                 ui=self.ui, 
-                                                 layout=self.ui.verticalLayout_19)
-                member.member_btn.clicked.connect(self.show_stats)
-                self.ui.verticalLayout_19.addWidget(member)
-                self.scrollmembers.addButton(member.member_btn)
-                self.member_in_list[member_id] = member
-                await asyncio.sleep(0.05)
-                
+        # Получаем главный event loop (он установлен через qasync в main.py)
+        main_loop = asyncio.get_event_loop()
+        from rainbotgui.utils.thread import DiscordMemberWorker
+        self.member_worker = DiscordMemberWorker(self.websocket_client, main_loop)
+        self.member_worker.member_data_ready.connect(self.handle_member_data)
+        self.member_worker.start()
+
+    def handle_member_data(self, data):
+        member_id = data['member_id']
+        if member_id in self.member_in_list:
+            member = self.member_in_list[member_id]
+            if member.nick != data['nickname']:
+                member.nick = data['nickname']
+            if member.icon != data['avatar_url']:
+                member.set_icon(data['avatar_url'])
+            if member.id != int(member_id):
+                member.id = int(member_id)
+            member.update_status(data['status'])
+        else:
+            nick = data['nickname']
+            icon = data['avatar_url']
+            status = data['status']
+            member = discord_member_button(nick=nick, icon=icon, 
+                                        status=status,
+                                        id=member_id,
+                                        parent=None, 
+                                        websocket_client=self.websocket_client, 
+                                        ui=self.ui, 
+                                        layout=self.ui.verticalLayout_19)
+            member.member_btn.clicked.connect(self.show_stats)
+            self.scrollmembers.addButton(member.member_btn)
+            self.member_in_list[member_id] = member

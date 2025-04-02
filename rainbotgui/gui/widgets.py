@@ -514,18 +514,20 @@ stats_texts ={
 }
 
 
+
+from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 class discord_member_button(QtWidgets.QWidget):
-    def __init__(self, nick, icon, status, id, parent, websocket_client, ui, layout, layout2 = None):
+    def __init__(self, nick, icon, status, id, parent, websocket_client, ui, layout):
         super().__init__(parent)
         self.nick = nick
         self.icon = icon
         self.status = status
-        self.id = int(id) if id.isdigit() else id
+        self.id = int(id) if str(id).isdigit() else id
         self.ui = ui
         self.websocket_client = websocket_client
         self.Parent = parent
-        layout.addWidget(self)
-        layout2.addWidget(self) if layout2 is not None else None
+        if layout is not None:
+            layout.addWidget(self)
         self.horizontalLayout = QtWidgets.QHBoxLayout(self)
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setSpacing(0)
@@ -537,22 +539,22 @@ class discord_member_button(QtWidgets.QWidget):
         self.member_btn.setMaximumSize(QtCore.QSize(205, 35))
         self.member_btn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.member_btn.setStyleSheet("QPushButton{\n"
-                              "    background-color: rgba(0, 0, 0, 0);\n"
-                              "    padding-left: 5px;\n"
-                              "    border-radius: 0px;\n"
-                              "    color: white;\n"
-                              "    font-size: 11px;\n"
-                              "    border: none;\n"
-                              "	   text-align: left;\n"
-                              "}\n"
-                              "QPushButton:hover{\n"
-                              "    background-color: #FFDAB9;\n"
-                              "    color: black;\n"
-                              "}\n"
-                              "QPushButton:checked{\n"
-                              "    background-color: #FFDAB9;\n"
-                              "    color: black;\n"
-                              "}\n")
+                                      "    background-color: rgba(0, 0, 0, 0);\n"
+                                      "    padding-left: 5px;\n"
+                                      "    border-radius: 0px;\n"
+                                      "    color: white;\n"
+                                      "    font-size: 11px;\n"
+                                      "    border: none;\n"
+                                      "    text-align: left;\n"
+                                      "}\n"
+                                      "QPushButton:hover{\n"
+                                      "    background-color: #FFDAB9;\n"
+                                      "    color: black;\n"
+                                      "}\n"
+                                      "QPushButton:checked{\n"
+                                      "    background-color: #FFDAB9;\n"
+                                      "    color: black;\n"
+                                      "}\n")
         self.logo = QtWidgets.QLabel(parent=self)
         self.logo.setMinimumSize(QtCore.QSize(35, 35))
         self.logo.setMaximumSize(QtCore.QSize(35, 35))
@@ -560,13 +562,14 @@ class discord_member_button(QtWidgets.QWidget):
         self.logo.setScaledContents(True)
         self.logo.setObjectName("logo")
         self.member_btn.setCheckable(True)
-
         self.member_btn.setObjectName("member_btn")
         self.horizontalLayout.addWidget(self.logo, 0, Qt.AlignmentFlag.AlignLeft)
         self.horizontalLayout.addWidget(self.member_btn, 0, Qt.AlignmentFlag.AlignRight)
         self.show()
+        # Используем асинхронную загрузку иконки
         self.set_icon(self.icon)
         self.member_btn.clicked.connect(self.open_stat)
+
     def open_stat(self):
         if self.ui.tabWidget.currentIndex() == 0:
             self.ui.tabWidget.setCurrentIndex(1)
@@ -582,20 +585,24 @@ class discord_member_button(QtWidgets.QWidget):
             self.status = status
             self.ui.stats_status.setText(stats_texts[status])
             
-            
-
     def set_icon(self, icon_path):
-        import requests
-        """Загружает и устанавливает изображение, поддерживает локальные файлы и URL"""
-        if icon_path.startswith("http"):  # Если это URL
-            try:
-                response = requests.get(icon_path, timeout=5)
-                if response.status_code == 200:
-                    pixmap = QtGui.QPixmap()
-                    pixmap.loadFromData(response.content)
-                    self.logo.setPixmap(pixmap)
-            except Exception as e:
-                print(f"Ошибка загрузки изображения: {e}")
-        else:  # Если это локальный файл
+        # Если это URL, загружаем асинхронно через QNetworkAccessManager
+        if icon_path.startswith("http"):
+            self.manager = QNetworkAccessManager(self)
+            request = QNetworkRequest(QtCore.QUrl(icon_path))
+            reply = self.manager.get(request)
+            reply.finished.connect(lambda: self.handle_icon_reply(reply))
+        else:
+            # Если локальный файл – загружаем синхронно (это обычно быстро)
             pixmap = QtGui.QPixmap(icon_path)
             self.logo.setPixmap(pixmap)
+            
+    def handle_icon_reply(self, reply: QNetworkReply):
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            data = reply.readAll()
+            pixmap = QtGui.QPixmap()
+            pixmap.loadFromData(data)
+            self.logo.setPixmap(pixmap)
+        else:
+            print("Ошибка загрузки изображения:", reply.errorString())
+        reply.deleteLater()
