@@ -35,11 +35,10 @@ class Terminal_Page(QObject):
         self.ui.button_find_in_console.clicked.connect(self.toggle_find)
         self.websocket_client.new_log_signal.connect(self.handle_new_log_message)
     
-    @asyncSlot()
-    async def set_tooltip(self):
-        await asyncio.sleep(0.1)
+    def set_tooltip(self):
         text = "Registered commands:"
-        for command in self.websocket_client.registered_functions.get('registered_functions'):
+        coms = self.websocket_client.registered_functions.get('registered_functions')
+        for command in coms:
             text += f"\n  /{command}"
         self.ui.com_help_btn.setToolTip(text)
         current_style = self.ui.com_help_btn.styleSheet() 
@@ -180,7 +179,6 @@ class Websocket_Page(QObject):
                 Success_Notify("Success connected", "Successfully connected to websocket server", f"Connect on {self.websocket_client.ip()}:{self.websocket_client.port()}", parent=self.main_win)
                 await self.load_logs()
                 await self.websocket_client.set_registered_functions()
-                self.main_win.websocket_setup.emit()
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connected.png"))
                 self.ui.label_6.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">Connected to:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.ip()}</span></p></body></html>")
                 self.ui.label_7.setText(f"<html><head/><body><p><span style=\" color:#89b086;\">on port:  </span><span style=\" font-weight:600; color:#69c5ca;\">{self.websocket_client.port()}</span></p></body></html>")
@@ -189,6 +187,8 @@ class Websocket_Page(QObject):
                 self.ui.conect_websc.setText("Connected")
                 self.ui.conect_websc.setDisabled(False)
                 self.main_win.setDisabled_tabs(False)
+                await asyncio.sleep(0.1)
+                self.main_win.websocket_setup.emit()
             else:
                 Error_Notify("Сonnection failed", "Cannot connect to websocket server", f"try was on {self.websocket_client.ip()}:{self.websocket_client.port()}", parent=self.main_win)
                 self.ui.label_5.setPixmap(QtGui.QPixmap(":/MainIcons/icons/connectError.png"))
@@ -397,50 +397,37 @@ class Stats_Page(QObject):
             )
             self.update_timeline(timelined, date2)
         else:
+            self.update_timeline(None, None)
             self.ui.stats_total.setText("Total:")
             self.ui.stats_total_text.setText("No data available")
             
     def update_timeline(self, timelined, date2):
-            # Создаем сцену для отрисовки таймлайна
-            scene_width = 800
-            scene_height = 10
-            scene = QtWidgets.QGraphicsScene(0, 0, scene_width, scene_height)
-            self.ui.stats_timeline.setScene(scene)
+        from rainbotgui.utils.timeline_generator import build_timeline_chart
+        from PyQt6.QtCharts import QChartView
+        if timelined is None and date2 is None:
+            if isinstance(self.ui.stats_timeline, QChartView):
+                chart = self.ui.stats_timeline.chart()
+                chart.removeAllSeries()
+            return
 
-            # Определяем начало и конец дня для расчета относительных координат.
-            day_start = QtCore.QDateTime.fromString(date2 + "T00:00:00", "yyyy-MM-dd'T'HH:mm:ss")
-            day_end   = QtCore.QDateTime.fromString(date2 + "T23:59:59", "yyyy-MM-dd'T'HH:mm:ss")
-            total_seconds = day_start.secsTo(day_end)
+        # Если timelined — dict с ключом 'timeline', берём список
+        timeline_list = timelined.get('timeline', []) if isinstance(timelined, dict) else timelined
+        chart_view = build_timeline_chart(timeline_list, date2)
 
-            # Функция выбора цвета по состоянию
-            def state_color(state: str) -> QtGui.QColor:
-                mapping = {
-                    "offline": QtGui.QColor("#6e6e6e"),
-                    "voice_online": QtGui.QColor("#00ffdd"),
-                    "voice_mute": QtGui.QColor("#aeff00"),
-                    "voice_deaf": QtGui.QColor("#ff5500"),
-                    "voice_afk": QtGui.QColor("#ff00d0"),
-                    "voice_alone": QtGui.QColor("#a200ff"),
-                    "online": QtGui.QColor("#288c00"),
-                }
-                return mapping.get(state, QtGui.QColor("gray"))
-
-            pen = QtGui.QPen()
-            pen.setStyle(Qt.PenStyle.NoPen)
-
-            timeline_list = timelined.get('timeline', []) if isinstance(timelined, dict) else timelined
-            for segment in timeline_list:
-                seg_start = QtCore.QDateTime.fromString(segment['start_time'], Qt.DateFormat.ISODate)
-                seg_end   = QtCore.QDateTime.fromString(segment['end_time'], Qt.DateFormat.ISODate)
-                offset = day_start.secsTo(seg_start)
-                duration = seg_start.secsTo(seg_end)
-                x = (offset / total_seconds) * scene_width
-                w = (duration / total_seconds) * scene_width
-                rect = QtCore.QRectF(x, 0, w, scene_height)
-                rect_item = QtWidgets.QGraphicsRectItem(rect)
-                rect_item.setBrush(state_color(segment['state']))
-                rect_item.setPen(pen)  # установка пера внутри цикла после создания rect_item
-                scene.addItem(rect_item)
+        # Заменяем содержимое self.ui.stats_timeline (которая, видимо, QGraphicsView)
+        # на наш chart_view. Самый простой способ — разместить chart_view в том же layout.
+        parent_layout = self.ui.stats_timeline.parent().layout()
+        if parent_layout:
+            # Удаляем старый виджет (self.ui.stats_timeline) из layout
+            parent_layout.replaceWidget(self.ui.stats_timeline, chart_view)
+            self.ui.stats_timeline.setParent(None)  # чтобы его удалить
+            self.ui.stats_timeline = chart_view
+        else:
+            # Если нет layout, возможно, нужно вручную задать setParent и geometry
+            chart_view.setGeometry(self.ui.stats_timeline.geometry())
+            chart_view.setParent(self.ui.stats_timeline.parent())
+            self.ui.stats_timeline.hide()
+            self.ui.stats_timeline = chart_view
 
     def eventFilter(self, source, event):
         if source is self.ui.stats_timeline and event.type() == QtCore.QEvent.Type.Wheel:
@@ -450,9 +437,9 @@ class Stats_Page(QObject):
                 factor = 0.9
             self.ui.stats_timeline.scale(factor, 1)
             return True
-        return super().eventFilter(source, event)         
-                
-
+        return super().eventFilter(source, event)           
+    
+    
     
     @asyncSlot()
     async def update_discord_member_list(self, on_open = False):
