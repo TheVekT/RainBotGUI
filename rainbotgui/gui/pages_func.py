@@ -429,18 +429,7 @@ class Stats_Page(QObject):
             self.ui.stats_timeline.hide()
             self.ui.stats_timeline = chart_view
 
-    def eventFilter(self, source, event):
-        if source is self.ui.stats_timeline and event.type() == QtCore.QEvent.Type.Wheel:
-            if event.angleDelta().y() > 0:
-                factor = 1.1
-            else:
-                factor = 0.9
-            self.ui.stats_timeline.scale(factor, 1)
-            return True
-        return super().eventFilter(source, event)           
-    
-    
-    
+
     @asyncSlot()
     async def update_discord_member_list(self, on_open = False):
         if not self.websocket_client.isConnected():
