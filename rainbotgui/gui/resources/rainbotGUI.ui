@@ -2048,6 +2048,12 @@ font-size: 13px;
                                <kerning>true</kerning>
                               </font>
                              </property>
+                             <property name="focusPolicy">
+                              <enum>Qt::NoFocus</enum>
+                             </property>
+                             <property name="layoutDirection">
+                              <enum>Qt::LeftToRight</enum>
+                             </property>
                              <property name="styleSheet">
                               <string notr="true">QCalendarWidget{
 	background-color: rgb(6,6,6);
@@ -2064,7 +2070,7 @@ QCalendarWidget QAbstractItemView:disabled {
 	color: rgba(255,255,255,100);
 }
 QToolButton {
-    icon-size: 10px, 10px;
+    icon-size: 10px;
     width: 100px;
     height: 25px;
 }
@@ -2075,10 +2081,7 @@ QToolButton#qt_calendar_prevmonth {
     qproperty-icon: url(:/MainIcons/icons/calendar_leftW.png);
 	icon-size: 20px;
 }
-QToolButton#qt_calendar_prevmonth:hover {
-    background: white;
-    qproperty-icon: url(:/MainIcons/icons/calendar_leftB.png);
-}
+
 QToolButton#qt_calendar_nextmonth {
     background-color: rgb(6,6,6);
     width: 30px;
@@ -2086,10 +2089,7 @@ QToolButton#qt_calendar_nextmonth {
     qproperty-icon: url(:/MainIcons/icons/calendar_rightW.png);
 	icon-size: 20px;
 }
-QToolButton#qt_calendar_nextmonth:hover {
-    background: white;
-    qproperty-icon: url(:/MainIcons/icons/calendar_rightB.png);
-}
+
 QToolButton#qt_calendar_monthbutton {
     background: rgb(6,6,6);
 	font-size: 13px;

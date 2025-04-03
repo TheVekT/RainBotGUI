@@ -925,6 +925,8 @@ class Ui_MainWindow(object):
         font.setFamily("JetBrains Mono,Helvetica")
         font.setKerning(True)
         self.stats_selectdate.setFont(font)
+        self.stats_selectdate.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        self.stats_selectdate.setLayoutDirection(QtCore.Qt.LayoutDirection.LeftToRight)
         self.stats_selectdate.setStyleSheet("QCalendarWidget{\n"
 "    background-color: rgb(6,6,6);\n"
 "}\n"
@@ -940,7 +942,7 @@ class Ui_MainWindow(object):
 "    color: rgba(255,255,255,100);\n"
 "}\n"
 "QToolButton {\n"
-"    icon-size: 10px, 10px;\n"
+"    icon-size: 10px;\n"
 "    width: 100px;\n"
 "    height: 25px;\n"
 "}\n"
@@ -951,10 +953,7 @@ class Ui_MainWindow(object):
 "    qproperty-icon: url(:/MainIcons/icons/calendar_leftW.png);\n"
 "    icon-size: 20px;\n"
 "}\n"
-"QToolButton#qt_calendar_prevmonth:hover {\n"
-"    background: white;\n"
-"    qproperty-icon: url(:/MainIcons/icons/calendar_leftB.png);\n"
-"}\n"
+"\n"
 "QToolButton#qt_calendar_nextmonth {\n"
 "    background-color: rgb(6,6,6);\n"
 "    width: 30px;\n"
@@ -962,10 +961,7 @@ class Ui_MainWindow(object):
 "    qproperty-icon: url(:/MainIcons/icons/calendar_rightW.png);\n"
 "    icon-size: 20px;\n"
 "}\n"
-"QToolButton#qt_calendar_nextmonth:hover {\n"
-"    background: white;\n"
-"    qproperty-icon: url(:/MainIcons/icons/calendar_rightB.png);\n"
-"}\n"
+"\n"
 "QToolButton#qt_calendar_monthbutton {\n"
 "    background: rgb(6,6,6);\n"
 "    font-size: 13px;\n"

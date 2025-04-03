@@ -4,7 +4,8 @@ import json
 from qasync import QEventLoop, asyncSlot
 from PyQt6.QtCore import Qt, QEvent, QObject, QThread, QTimer
 from PyQt6 import QtGui, QtWidgets, QtCore
-from PyQt6.QtWidgets import QGraphicsScene, QGraphicsRectItem, QVBoxLayout
+from PyQt6.QtGui import QColor, QPalette
+from PyQt6.QtWidgets import QGraphicsScene, QGraphicsRectItem, QVBoxLayout, QSpinBox, QToolButton
 from rainbotgui.gui.resources import resources
 from rainbotgui.network.rainbotAPI_client import RainBot_Websocket
 from rainbotgui.gui.main_window_ui import Ui_MainWindow
@@ -360,7 +361,7 @@ class Stats_Page(QObject):
         self.ui.stats_backbutton.clicked.connect(lambda: self.ui.tabWidget.setCurrentIndex(0))
         self.ui.stats_selectdate.setSelectedDate(QtCore.QDate.currentDate())
         self.ui.stats_selectdate.selectionChanged.connect(self.show_stats)
-        #self.start_updating()
+        self.start_updating()
         
     def start_updating(self):
         self.timer = QtCore.QTimer(self)

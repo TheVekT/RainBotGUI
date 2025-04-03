@@ -6,7 +6,7 @@ from qasync import QEventLoop, asyncSlot
 
 from PyQt6 import QtGui, QtCore
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, pyqtSlot
-from PyQt6.QtWidgets import QMainWindow,QPushButton, QWidget, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QVBoxLayout
+from PyQt6.QtWidgets import QMainWindow,QPushButton, QWidget, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QVBoxLayout, QCalendarWidget
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPainterPath
 
 from rainbotgui.gui.resources import resources
@@ -25,7 +25,6 @@ class MainWindow(QMainWindow):
         
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
 
         # #
         # # atributes
@@ -141,6 +140,8 @@ class MainWindow(QMainWindow):
         # Анимация fade in для каждого дочернего элемента
         for child in current_widget.findChildren(QWidget):
             if child.objectName() not in ('find_label_2'):
+                if isinstance(child, QCalendarWidget) or child.objectName() in ('qt_calendar_yearedit', 'qt_calendar_prevmonth', 'qt_calendar_nextmonth'):
+                    continue
                 self.fade_in_animation(child, duration)
 
 
