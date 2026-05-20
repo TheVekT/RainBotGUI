@@ -1,4 +1,32 @@
+# Python bytecode & cache
 __pycache__/
-tests/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Build & distribution
+build/
 dist/
+*.spec
+*.egg-info/
+
+# Local configurations & logs
 settings.json
+*.log
+
+# IDE & editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Scratch & Local tests
+tests/
